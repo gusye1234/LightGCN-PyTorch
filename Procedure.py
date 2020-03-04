@@ -23,6 +23,10 @@ def BPR_train(dataset,recommend_model, loss_class, epoch, neg_k = 4,w=None):
     users = torch.Tensor(S[:,0]).long()
     posItems = torch.Tensor(S[:,1]).long()
     negItems = torch.Tensor(S[:,2]).long()
+    
+    users    = users.to(world.device)
+    posItems = posItems.to(world.device)
+    negItems = negItems.to(world.device)
     users, posItems, negItems = utils.shuffle(users, posItems, negItems)
     for (batch_i, 
         (batch_users, 
@@ -45,8 +49,10 @@ def Test(dataset, Recmodel, top_k, epoch, w=None):
     with torch.no_grad():
         Recmodel.eval()
         users = torch.Tensor(list(testDict.keys()))
+        users = users.to(world.device)
         GroundTrue = [testDict[user] for user in users.numpy()]
         rating = Recmodel.getUsersRating(users)
+        rating = rating.cpu()
         # exclude positive train data
         allPos = dataset.getUserPosItems(users)
         exclude_index = []

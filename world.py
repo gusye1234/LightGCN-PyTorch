@@ -13,6 +13,7 @@ config['dropout'] = False
 config['keep_prob']  = 0.6
 
 GPU = torch.cuda.is_available()
+device = torch.device('cuda' if GPU else "cpu")
 
 TRAIN_epochs = 1000
 LOAD = False

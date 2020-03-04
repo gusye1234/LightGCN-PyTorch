@@ -25,6 +25,7 @@ print("using bpr loss")
 print('===========end===================')
 
 Recmodel = LightGCN(world.config, dataset)
+Recmodel = Recmodel.to(world.device)
 bpr = utils.BPRLoss(Recmodel)
 
 Neg_k = 3
