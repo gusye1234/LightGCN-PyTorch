@@ -1,0 +1,13 @@
+*.xml
+*.log
+*.apk
+*.iml
+**/.vscode/
+**/.idea/
+*.pyc
+.DS_Store
+*.cfg
+*.png
+*.sqlite3
+runs/
+__pycache__/
