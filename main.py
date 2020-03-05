@@ -10,7 +10,7 @@ import time
 from tqdm import tqdm
 import Procedure
 
-dataset = dataloader.LastFM()
+dataset = dataloader.gowalla()
 
 world.config['num_users'] = dataset.n_users
 world.config['num_items'] = dataset.m_items
@@ -25,6 +25,7 @@ print("using bpr loss")
 print('===========end===================')
 
 Recmodel = LightGCN(world.config, dataset)
+Recmodel = Recmodel.to(world.device)
 bpr = utils.BPRLoss(Recmodel)
 
 Neg_k = 3

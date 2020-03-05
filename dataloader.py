@@ -165,7 +165,7 @@ class LastFM(BasicDataset):
     
     def __len__(self):
         return len(self.trainUniqueUsers)
-'''
+
 class gowalla(BasicDataset):
     """
     Dataset type for pytorch \n
@@ -181,31 +181,42 @@ class gowalla(BasicDataset):
         self.m_items = 40981
         train_file = path + '/train.txt'
         test_file = path + '/test.txt'
-        trainUser, trainItem = [], []
+        trainUniqueUsers, trainItem, trainUser = [], [], []
+        testUniqueUsers, testItem, testUser = [], [], []
         self.trainDataSize = 0
+        self.testDataSize = 0
+
         with open(train_file) as f:
             for l in f.readlines():
                 if len(l) > 0:
                     l = l.strip('\n').split(' ')
                     items = [int(i) for i in l[1:]]
                     uid = int(l[0])
-                    trainUser.append(uid)
-                    self.self.trainDataSize += len(items)
+                    trainUniqueUsers.append(uid)
+                    trainUser.extend([uid] * len(items))
+                    trainItem.extend(items)
+                    self.trainDataSize += len(items)
+        self.trainUniqueUsers = np.array(trainUniqueUsers)
+        self.trainUser = np.array(trainUser)
+        self.trainItem = np.array(trainItem)
 
-        # print(testData.head())
-        self.trainUser = np.array(trainData[:][0])
-        self.trainUniqueUsers = np.unique(self.trainUser)
-        self.trainItem = np.array(trainData[:][1])
-        self.trainDataSize = len(self.trainUser)
-        self.testUser = np.array(testData[:][0])
-        self.testUniqueUsers = np.unique(self.testUser)
-        self.testItem = np.array(testData[:][1])
+        with open(test_file) as f:
+            for l in f.readlines():
+                if len(l) > 0:
+                    l = l.strip('\n').split(' ')
+                    items = [int(i) for i in l[1:]]
+                    uid = int(l[0])
+                    testUniqueUsers.append(uid)
+                    testUser.extend([uid] * len(items))
+                    testItem.extend(items)
+                    self.testDataSize += len(items)
+        self.testUniqueUsers = np.array(testUser)
+        self.testUser = np.array(testUser)
+        self.testItem = np.array(testItem)
+
         self.Graph = None
-        print(f"LastFm Sparsity : {(len(self.trainUser) + len(self.testUser)) / self.n_users / self.m_items}")
+        print(f"gowalla Sparsity : {(self.trainDataSize + self.testDataSize) / self.n_users / self.m_items}")
 
-        # (users,users)
-        self.socialNet = csr_matrix((np.ones(len(trustNet)), (trustNet[:, 0], trustNet[:, 1])),
-                                    shape=(self.n_users, self.n_users))
         # (users,items), bipartite graph
         self.UserItemNet = csr_matrix((np.ones(len(self.trainUser)), (self.trainUser, self.trainItem)),
                                       shape=(self.n_users, self.m_items))
@@ -213,10 +224,76 @@ class gowalla(BasicDataset):
         # pre-calculate
         self.allPos = self.getUserPosItems(list(range(self.n_users)))
         self.allNeg = []
+
         allItems = set(range(self.m_items))
         for i in range(self.n_users):
             pos = set(self.allPos[i])
             neg = allItems - pos
             self.allNeg.append(np.array(list(neg)))
+        print('done pos&neg')
         self.__testDict = self.__build_test()
-'''
+
+    def getSparseGraph(self):
+        if self.Graph is None:
+            user_dim = torch.LongTensor(self.trainUser)
+            item_dim = torch.LongTensor(self.trainItem)
+
+            first_sub = torch.stack([user_dim, item_dim + self.n_users])
+            second_sub = torch.stack([item_dim + self.n_users, user_dim])
+            index = torch.cat([first_sub, second_sub], dim=1)
+            data = torch.ones(index.size(-1)).int()
+            self.Graph = torch.sparse.IntTensor(index, data,
+                                                torch.Size([self.n_users + self.m_items, self.n_users + self.m_items]))
+            dense = self.Graph.to_dense()
+            D = torch.sum(dense, dim=1).float()
+            D[D == 0.] = 1.
+            D_sqrt = torch.sqrt(D).unsqueeze(dim=0)
+            dense = dense / D_sqrt
+            dense = dense / D_sqrt.t()
+            index = dense.nonzero()
+            data = dense[dense >= 1e-9]
+            assert len(index) == len(data)
+            self.Graph = torch.sparse.IntTensor(index.t(), data,
+                                                torch.Size([self.n_users + self.m_items, self.n_users + self.m_items]))
+        return self.Graph
+
+    def __build_test(self):
+        """
+        return:
+            dict: {user: [items]}
+        """
+        test_data = {}
+        for i, item in enumerate(self.testItem):
+            user = self.testUser[i]
+            if test_data.get(user):
+                test_data[user].append(item)
+            else:
+                test_data[user] = [item]
+        return test_data
+
+    def getTestDict(self):
+        return self.__testDict
+
+    def getUserItemFeedback(self, users, items):
+        """
+        users:
+            shape [-1]
+        items:
+            shape [-1]
+        return:
+            feedback [-1]
+        """
+        # print(self.UserItemNet[users, items])
+        return np.array(self.UserItemNet[users, items]).astype('uint8').reshape((-1,))
+
+    def getUserPosItems(self, users):
+        posItems = []
+        for user in users:
+            posItems.append(self.UserItemNet[user].nonzero()[1])
+        return posItems
+
+    def getUserNegItems(self, users):
+        negItems = []
+        for user in users:
+            negItems.append(self.allNeg[user])
+        return negItems
