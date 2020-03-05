@@ -165,3 +165,58 @@ class LastFM(BasicDataset):
     
     def __len__(self):
         return len(self.trainUniqueUsers)
+'''
+class gowalla(BasicDataset):
+    """
+    Dataset type for pytorch \n
+    Incldue graph information
+    gowalla dataset
+    """
+
+    def __init__(self, path="./data/gowalla"):
+        # train or test
+        self.mode_dict = {'train': 0, "test": 1}
+        self.mode = self.mode_dict['train']
+        self.n_users = 29858
+        self.m_items = 40981
+        train_file = path + '/train.txt'
+        test_file = path + '/test.txt'
+        trainUser, trainItem = [], []
+        self.trainDataSize = 0
+        with open(train_file) as f:
+            for l in f.readlines():
+                if len(l) > 0:
+                    l = l.strip('\n').split(' ')
+                    items = [int(i) for i in l[1:]]
+                    uid = int(l[0])
+                    trainUser.append(uid)
+                    self.self.trainDataSize += len(items)
+
+        # print(testData.head())
+        self.trainUser = np.array(trainData[:][0])
+        self.trainUniqueUsers = np.unique(self.trainUser)
+        self.trainItem = np.array(trainData[:][1])
+        self.trainDataSize = len(self.trainUser)
+        self.testUser = np.array(testData[:][0])
+        self.testUniqueUsers = np.unique(self.testUser)
+        self.testItem = np.array(testData[:][1])
+        self.Graph = None
+        print(f"LastFm Sparsity : {(len(self.trainUser) + len(self.testUser)) / self.n_users / self.m_items}")
+
+        # (users,users)
+        self.socialNet = csr_matrix((np.ones(len(trustNet)), (trustNet[:, 0], trustNet[:, 1])),
+                                    shape=(self.n_users, self.n_users))
+        # (users,items), bipartite graph
+        self.UserItemNet = csr_matrix((np.ones(len(self.trainUser)), (self.trainUser, self.trainItem)),
+                                      shape=(self.n_users, self.m_items))
+
+        # pre-calculate
+        self.allPos = self.getUserPosItems(list(range(self.n_users)))
+        self.allNeg = []
+        allItems = set(range(self.m_items))
+        for i in range(self.n_users):
+            pos = set(self.allPos[i])
+            neg = allItems - pos
+            self.allNeg.append(np.array(list(neg)))
+        self.__testDict = self.__build_test()
+'''
