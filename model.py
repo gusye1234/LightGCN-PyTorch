@@ -30,7 +30,7 @@ class LightGCN(nn.Module):
         self.f = nn.Sigmoid()
         self.n_layers = self.config['lightGCN_n_layers']
         self.keep_prob = self.config['keep_prob']
-        self.Graph = self.dataset.getSparseGraph().coalesce()
+        self.Graph = self.dataset.getSparseGraph().coalesce().to(world.device)
         # print("save_txt")
     
     def __dropout(self, keep_prob):

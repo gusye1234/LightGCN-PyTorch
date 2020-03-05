@@ -29,7 +29,7 @@ class BPRLoss:
         loss.backward()
         self.opt.step()
         
-        return loss.item()
+        return loss.cpu().item()
 
 
 
