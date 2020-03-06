@@ -9,12 +9,23 @@ config['batch_size'] = 4096
 config['bpr_batch_size'] = 4096
 config['latent_dim_rec'] = 32
 config['lightGCN_n_layers']=2
+config['test_batch'] = 100
 config['dropout'] = False
 config['keep_prob']  = 0.6
+config['A_n_fold'] = 100
 
 GPU = torch.cuda.is_available()
 device = torch.device('cuda' if GPU else "cpu")
 #device = torch.device("cpu")
+
+dataset = 'gowalla'
+if dataset in ['gowalla']:
+    config['A_split'] = True
+    config['bigdata'] = True
+else:
+    config['A_split'] = False
+
+
 
 TRAIN_epochs = 1000
 LOAD = False

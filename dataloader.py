@@ -10,8 +10,9 @@ import pandas as pd
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from scipy.sparse import csr_matrix
+import scipy.sparse as sp
 import world
-
+from time import time
 
 class BasicDataset(Dataset):
     def __init__(self):
@@ -45,6 +46,7 @@ class LastFM(BasicDataset):
     """
     def __init__(self, path="./data/lastfm"):
         # train or test
+        print("loading [last fm]")
         self.mode_dict = {'train':0, "test":1}
         self.mode    = self.mode_dict['train']
         self.n_users = 1892
@@ -105,7 +107,8 @@ class LastFM(BasicDataset):
             index = dense.nonzero()
             data  = dense[dense >= 1e-9]
             assert len(index) == len(data)
-            self.Graph = torch.sparse.IntTensor(index.t(), data, torch.Size([self.n_users+self.m_items, self.n_users+self.m_items]))
+            self.Graph = torch.sparse.FloatTensor(index.t(), data, torch.Size([self.n_users+self.m_items, self.n_users+self.m_items]))
+            self.Graph = self.Graph.coalesce().to(world.device)
         return self.Graph
 
     def __build_test(self):
@@ -166,21 +169,24 @@ class LastFM(BasicDataset):
     def __len__(self):
         return len(self.trainUniqueUsers)
 
-class gowalla(BasicDataset):
+class Gowalla(BasicDataset):
     """
     Dataset type for pytorch \n
     Incldue graph information
     gowalla dataset
     """
 
-    def __init__(self, path="./data/gowalla"):
+    def __init__(self,config = world.config,path="./data/gowalla"):
         # train or test
+        print('loading [gowalla]')
+        self.folds = config['A_n_fold']
         self.mode_dict = {'train': 0, "test": 1}
         self.mode = self.mode_dict['train']
         self.n_users = 29858
         self.m_items = 40981
         train_file = path + '/train.txt'
         test_file = path + '/test.txt'
+        self.path = path
         trainUniqueUsers, trainItem, trainUser = [], [], []
         testUniqueUsers, testItem, testUser = [], [], []
         self.trainDataSize = 0
@@ -215,46 +221,71 @@ class gowalla(BasicDataset):
         self.testItem = np.array(testItem)
 
         self.Graph = None
+        print(f"{self.trainDataSize} interactions for training")
         print(f"gowalla Sparsity : {(self.trainDataSize + self.testDataSize) / self.n_users / self.m_items}")
 
         # (users,items), bipartite graph
         self.UserItemNet = csr_matrix((np.ones(len(self.trainUser)), (self.trainUser, self.trainItem)),
                                       shape=(self.n_users, self.m_items))
-
+        self.users_D = np.array(self.UserItemNet.sum(axis=1)).squeeze()
+        self.users_D[self.users_D == 0.] = 1
+        self.items_D = np.array(self.UserItemNet.sum(axis=0)).squeeze()
+        self.items_D[self.items_D == 0.] = 1.
         # pre-calculate
         self.allPos = self.getUserPosItems(list(range(self.n_users)))
-        self.allNeg = []
-
-        allItems = set(range(self.m_items))
-        for i in range(self.n_users):
-            pos = set(self.allPos[i])
-            neg = allItems - pos
-            self.allNeg.append(np.array(list(neg)))
-        print('done pos&neg')
         self.__testDict = self.__build_test()
+        print("gowalla is ready to go")
 
+    def _split_A_hat(self,A):
+        A_fold = []
+        fold_len = (self.n_users + self.m_items) // self.folds
+        for i_fold in range(self.folds):
+            start = i_fold*fold_len
+            if i_fold == self.folds - 1:
+                end = self.n_users + self.m_items
+            else:
+                end = (i_fold + 1) * fold_len
+            A_fold.append(self._convert_sp_mat_to_sp_tensor(A[start:end]).to(world.device))
+        return A_fold
+
+    def _convert_sp_mat_to_sp_tensor(self, X):
+        coo = X.tocoo().astype(np.float32)
+        row = torch.Tensor(coo.row).long()
+        col = torch.Tensor(coo.col).long()
+        index = torch.stack([row, col])
+        data = torch.FloatTensor(coo.data)
+        return torch.sparse.FloatTensor(index, data, torch.Size(coo.shape))
+        
     def getSparseGraph(self):
         if self.Graph is None:
-            user_dim = torch.LongTensor(self.trainUser)
-            item_dim = torch.LongTensor(self.trainItem)
+            try:
+                pre_adj_mat = sp.load_npz(self.path + '/s_pre_adj_mat.npz')
+                print("successfully loaded...")
+                norm_adj = pre_adj_mat
+            except :
+                s = time()
+                adj_mat = sp.dok_matrix((self.n_users + self.m_items, self.n_users + self.m_items), dtype=np.float32)
+                adj_mat = adj_mat.tolil()
+                R = self.UserItemNet.tolil()
+                adj_mat[:self.n_users, self.n_users:] = R
+                adj_mat[self.n_users:, :self.n_users] = R.T
+                adj_mat = adj_mat.todok()
+                adj_mat = adj_mat + sp.eye(adj_mat.shape[0])
+                
+                rowsum = np.array(adj_mat.sum(axis=1))
+                d_inv = np.power(rowsum, -0.5).flatten()
+                d_inv[np.isinf(d_inv)] = 0.
+                d_mat = sp.diags(d_inv)
+                
+                norm_adj = d_mat.dot(adj_mat)
+                norm_adj = norm_adj.dot(d_mat)
+                norm_adj = norm_adj.tocsr()
+                end = time()
+                print(f"costing {end-s}s, saved norm_mat...")
+                sp.save_npz(self.path + '/s_pre_adj_mat.npz', norm_adj)
 
-            first_sub = torch.stack([user_dim, item_dim + self.n_users])
-            second_sub = torch.stack([item_dim + self.n_users, user_dim])
-            index = torch.cat([first_sub, second_sub], dim=1)
-            data = torch.ones(index.size(-1)).int()
-            self.Graph = torch.sparse.IntTensor(index, data,
-                                                torch.Size([self.n_users + self.m_items, self.n_users + self.m_items]))
-            dense = self.Graph.to_dense()
-            D = torch.sum(dense, dim=1).float()
-            D[D == 0.] = 1.
-            D_sqrt = torch.sqrt(D).unsqueeze(dim=0)
-            dense = dense / D_sqrt
-            dense = dense / D_sqrt.t()
-            index = dense.nonzero()
-            data = dense[dense >= 1e-9]
-            assert len(index) == len(data)
-            self.Graph = torch.sparse.IntTensor(index.t(), data,
-                                                torch.Size([self.n_users + self.m_items, self.n_users + self.m_items]))
+            self.Graph = self._split_A_hat(norm_adj)    
+            print("done split matrix")
         return self.Graph
 
     def __build_test(self):
@@ -292,8 +323,8 @@ class gowalla(BasicDataset):
             posItems.append(self.UserItemNet[user].nonzero()[1])
         return posItems
 
-    def getUserNegItems(self, users):
-        negItems = []
-        for user in users:
-            negItems.append(self.allNeg[user])
-        return negItems
+    # def getUserNegItems(self, users):
+    #     negItems = []
+    #     for user in users:
+    #         negItems.append(self.allNeg[user])
+    #     return negItems

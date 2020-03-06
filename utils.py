@@ -33,7 +33,7 @@ class BPRLoss:
 
 
 
-def UniformSample(users, dataset, k=1):
+def __UniformSample(users, dataset, k=1):
     """
     uniformsample k negative items and one positive item for one user
     return:
@@ -66,6 +66,54 @@ def UniformSample(users, dataset, k=1):
     total = time() - total_start
     return np.array(S), [total, sample_time1, sample_time2]
         
+
+def UniformSample_allpos_largeDataset(users, dataset, k=4):
+    """
+    uniformsample k negative items and one positive item for one user
+    return:
+        np.array
+    """
+    dataset : BasicDataset
+    allPos   = dataset.getUserPosItems(users)
+    # allNeg   = dataset.getUserNegItems(users)
+    # allItems = list(range(dataset.m_items))
+    S = []
+    sample_time1 = 0.
+    sample_time2 = 0.
+    total_start = time()
+    for i, user in enumerate(users):
+        start = time()
+        posForUser = allPos[i]
+        # negForUser = dataset.getUserNegItems([user])[0]
+        negForUser_len = dataset.m_items - len(posForUser)
+        sample_time2 += time()-start
+        
+        for positem in posForUser:
+            start = time()
+            # onePos_index = np.random.randint(0, len(posForUser))
+            # onePos     = posForUser[onePos_index:onePos_index+1]
+            # onePos     = np.random.choice(posForUser, size=(1, ))
+            # kNeg_index = np.random.randint(0, len(negForUser), size=(k, ))
+            # kNeg       = negForUser[kNeg_index]
+            kNeg = []
+            neg_i = 0
+            while True:
+                if neg_i == k:
+                    break
+                neg = np.random.randint(0, negForUser_len)
+                if neg in posForUser:
+                    continue
+                else:
+                    kNeg.append(neg)
+                    neg_i += 1
+            end = time()
+            sample_time1 += end-start
+            for negitemForpos in kNeg:
+                S.append([user, positem, negitemForpos])
+            # S.append(np.hstack([onePos, kNeg]))
+    total = time() - total_start
+    return np.array(S), [total, sample_time1, sample_time2]
+
 
 def UniformSample_allpos(users, dataset, k=4):
     """

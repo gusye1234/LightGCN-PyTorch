@@ -23,26 +23,38 @@ class LightGCN(nn.Module):
         self.num_users  = self.config['num_users']
         self.num_items  = self.config['num_items']
         self.latent_dim = self.config['latent_dim_rec']
+        self.n_layers = self.config['lightGCN_n_layers']
+        self.keep_prob = self.config['keep_prob']
+        self.A_split = self.config['A_split']
         self.embedding_user = torch.nn.Embedding(
             num_embeddings=self.num_users, embedding_dim=self.latent_dim)
         self.embedding_item = torch.nn.Embedding(
             num_embeddings=self.num_items, embedding_dim=self.latent_dim)
         self.f = nn.Sigmoid()
-        self.n_layers = self.config['lightGCN_n_layers']
-        self.keep_prob = self.config['keep_prob']
-        self.Graph = self.dataset.getSparseGraph().coalesce().to(world.device)
+        self.Graph = self.dataset.getSparseGraph()
+        print("lgn is already to go")
+
         # print("save_txt")
-    
-    def __dropout(self, keep_prob):
-        size = self.Graph.size()
-        index = self.Graph.indices().t()
-        values = self.Graph.values()
+    def __dropout_x(self, x, keep_prob):
+        size = x.size()
+        index = x.indices().t()
+        values = x.values()
         random_index = torch.rand(len(values)) + keep_prob
         random_index = random_index.int().bool()
         index = index[random_index]
         values = values[random_index]/keep_prob
-        g = torch.sparse.IntTensor(index.t(), values, size)
+        g = torch.sparse.FloatTensor(index.t(), values, size)
         return g
+    
+    
+    def __dropout(self, keep_prob):
+        if self.A_split:
+            graph = []
+            for g in self.Graph:
+                graph.append(self.__dropout_x(g, keep_prob))
+        else:
+            graph = self.__dropout_x(self.Graph, keep_prob)
+        return graph
         
     def getUsersRating(self, users):
         all_users, all_items = self.computer()
@@ -64,12 +76,16 @@ class LightGCN(nn.Module):
                 g_droped = self.Graph        
         else:
             g_droped = self.Graph    
-        #if self.training:
-            #g_droped = self.__dropout(self.keep_prob)
-
         
         for layer in range(self.n_layers):
-            all_emb = torch.sparse.mm(g_droped, all_emb)
+            if self.A_split:
+                temp_emb = []
+                for f in range(len(g_droped)):
+                    temp_emb.append(torch.sparse.mm(g_droped[f], all_emb))
+                side_emb = torch.cat(temp_emb, dim=0)
+                all_emb = side_emb
+            else:
+                all_emb = torch.sparse.mm(g_droped, all_emb)
             embs.append(all_emb)
         embs = torch.stack(embs, dim=1)
         #print(embs.size())
