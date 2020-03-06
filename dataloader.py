@@ -3,7 +3,7 @@ Created on Mar 1, 2020
 Pytorch Implementation of LightGCN in
 Xiangnan He et al. LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation
 
-@author: Shuxian Bi (your mail here),Jianbai Ye (gusye@mail.ustc.edu.cn)
+@author: Shuxian Bi (stanbi@mail.ustc.edu.cn),Jianbai Ye (gusye@mail.ustc.edu.cn)
 Design Dataset here
 Every dataset's index has to start at 0
 """

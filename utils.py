@@ -13,6 +13,7 @@ from torch import log
 from dataloader import BasicDataset
 from time import time
 from model import LightGCN
+import random
 
         
 class BPRLoss:
@@ -120,6 +121,36 @@ def UniformSample_allpos_largeDataset(users, dataset, k=4):
             # S.append(np.hstack([onePos, kNeg]))
     total = time() - total_start
     return np.array(S), [total, sample_time1, sample_time2]
+
+def UniformSample_original(users, dataset):
+    """
+    the original impliment of BPR Sampling in LightGCN
+    :return:
+        np.array
+    """
+    dataset : BasicDataset
+    allPos = dataset.getUserPosItems(users)
+    S = []
+    sample_time1 = 0.
+    sample_time2 = 0.
+    total_start = time()
+    for i, user in enumerate(users):
+        start = time()
+        posForUser = list(allPos[i])
+        sample_time2 += time() - start
+        positem = np.array(random.sample(posForUser, 1)[0])
+        while True:
+            negitem = np.random.randint(0, dataset.m_items)
+            if negitem in posForUser:
+                continue
+            else:
+                break
+        S.append([user, positem, negitem])
+        end = time()
+        sample_time1 += end - start
+    total = time() - total_start
+    return np.array(S), [total, sample_time1, sample_time2]
+
 
 
 def UniformSample_allpos(users, dataset, k=4):

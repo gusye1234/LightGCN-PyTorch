@@ -5,13 +5,14 @@ Xiangnan He et al. LightGCN: Simplifying and Powering Graph Convolution Network 
 
 @author: Jianbai Ye (gusye@mail.ustc.edu.cn)
 '''
+
 import os
 import torch
 from enum import Enum
-import parser
+from parse import parse_args
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
-args = parser.parser()
+args = parse_args()
 
 config = {}
 all_dataset = ['lastfm', 'gowalla']
