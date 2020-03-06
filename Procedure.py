@@ -17,6 +17,7 @@ from tqdm import tqdm
 import model
 import multiprocessing
 
+CORES = multiprocessing.cpu_count() // 2
 
 
 def BPR_train(dataset,recommend_model, loss_class, epoch, neg_k = 4,w=None):
@@ -39,54 +40,92 @@ def BPR_train(dataset,recommend_model, loss_class, epoch, neg_k = 4,w=None):
     for (batch_i, 
         (batch_users, 
          batch_pos, 
-         batch_neg)) in tqdm(enumerate(utils.minibatch(users, 
+         batch_neg)) in enumerate(utils.minibatch(users, 
                                                   posItems, 
                                                   negItems, 
-                                                  batch_size=world.config['bpr_batch_size'])),total=total_batch):
+                                                  batch_size=world.config['bpr_batch_size'])):
         cri = bpr.stageOne(batch_users, batch_pos, batch_neg)
         aver_loss += cri
         if world.tensorboard:
             w.add_scalar(f'BPRLoss/BPR', cri, epoch*int(len(users)/world.config['bpr_batch_size']) + batch_i)
     aver_loss = aver_loss/total_batch
-    return f"[BPR[{aver_loss:.3e}][{sam_time[0]:.1f}={sam_time[1]:.1f}+{sam_time[1]:.1f}]]"
+    return f"[BPR[aver loss{aver_loss:.3e}]"
     
     
-
+def test_one_batch(X):
+    users = X[0]
+    sorted_items = X[1]
+    groundTrue = X[2]
+    pre, recall, ndcg = [], [], []
+    for k in world.topks:
+        ret = utils.recall_precisionATk(groundTrue, sorted_items, k)
+        pre.append(ret['precision'])
+        recall.append(ret['recall'])
+        ndcg.append(utils.NDCGatK(groundTrue, sorted_items, k))
+    return {'recall':np.array(recall), 
+            'precision':np.array(pre), 
+            'ndcg':np.array(ndcg)}
+        
+            
 def Test(dataset, Recmodel, top_k, epoch, w=None):
+    u_batch_size = world.config['test_u_batch_size']
     dataset : utils.BasicDataset
     testDict : dict = dataset.getTestDict()
-    Recmodel : model.RecMF
+    Recmodel : model.LightGCN
+    # eval mode with no dropout
+    Recmodel = Recmodel.eval()
+    max_K = max(world.topks)
+    pool = multiprocessing.Pool(CORES)
+    results = {'precision': np.zeros(len(world.topks)), 
+              'recall': np.zeros(len(world.topks)), 
+              'ndcg': np.zeros(len(world.topks))}
     with torch.no_grad():
-        Recmodel.eval()
-        users = torch.Tensor(list(testDict.keys()))
-        users = users.to(world.device)
-        GroundTrue = [testDict[user] for user in users.cpu().numpy()]
-        rating = Recmodel.getUsersRating(users)
-        rating = rating.cpu()
-        # exclude positive train data
-        allPos = dataset.getUserPosItems(users)
-        exclude_index = []
-        exclude_items = []
-        for range_i, items in enumerate(allPos):
-            exclude_index.extend([range_i]*len(items))
-            exclude_items.extend(items)
-        rating[exclude_index, exclude_items] = 0.
-        # assert torch.all(rating >= 0.)
-        # assert torch.all(rating <= 1.)
-        # end excluding
-        _, top_items = torch.topk(rating, top_k)
-        top_items = top_items.cpu().numpy()
-        metrics = utils.recall_precisionATk(GroundTrue, top_items, top_k)
-        metrics['mrr'] = utils.MRRatK(GroundTrue, top_items, top_k)
-        metrics['ndcg'] = utils.NDCGatK(GroundTrue, top_items, top_k)
-        # pprint(metrics)
+        users = list(testDict.keys())
+        try:
+            assert u_batch_size <= len(users)/10
+        except AssertionError:
+            print(f"test_u_batch_size is too big for this dataset, try a small one {len(users)//10}")
+        users_list = []
+        rating_list = []
+        groundTrue_list = []
+        # ratings = []
+        total_batch = len(users)//u_batch_size + 1
+        for batch_users in utils.minibatch(users, batch_size=u_batch_size):
+            allPos = dataset.getUserPosItems(batch_users)
+            groundTrue = [testDict[u] for u in batch_users]
+            batch_users_gpu = torch.Tensor(batch_users).long()
+            batch_users_gpu = batch_users_gpu.to(world.device)
+        
+            rating = Recmodel.getUsersRating(batch_users_gpu)
+            rating = rating.cpu()
+            exclude_index = []
+            exclude_items = []
+            for range_i, items in enumerate(allPos):
+                exclude_index.extend([range_i]*len(items))
+                exclude_items.extend(items)
+            rating[exclude_index, exclude_items] = -1e5
+            _, rating_K = torch.topk(rating, k=max_K)
+            del rating      
+            users_list.append(batch_users)
+            rating_list.append(rating_K) 
+            groundTrue_list.append(groundTrue)
+        assert total_batch == len(users_list)
+        X = zip(users_list, rating_list, groundTrue_list)
+        pre_results = pool.map(test_one_batch, X)
+        for result in pre_results:
+            results['recall'] += result['recall'] / total_batch
+            results['precision'] += result['precision'] / total_batch
+            results['ndcg'] += result['ndcg'] / total_batch
         if world.tensorboard:
-            w.add_scalar(f'Test/Recall@{top_k}', metrics['recall'], epoch)
-            w.add_scalar(f'Test/Precision@{top_k}', metrics['precision'], epoch)
-            w.add_scalar(f'Test/MRR@{top_k}', metrics['mrr'], epoch)
-            w.add_scalar(f'Test/NDCG@{top_k}', metrics['ndcg'], epoch)
+            w.add_scalars(f'Test/Recall@{world.topks}', 
+                         {str(world.topks[i]): results['recall'][i] for i in range(len(world.topks))}, epoch)
+            w.add_scalars(f'Test/Precision@{world.topks}',
+                         {str(world.topks[i]): results['precision'][i] for i in range(len(world.topks))}, epoch)
+            w.add_scalars(f'Test/NDCG@{world.topks}',
+                         {str(world.topks[i]): results['ndcg'][i] for i in range(len(world.topks))}, epoch)
+        pool.close()
+        return results
+        
+    
             
             
-            
-def test_large(dataset, Recmodel, top_k, epoch, w=None):
-    u_batch_size = world.config['test_u_batch_size']
