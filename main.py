@@ -2,6 +2,7 @@ import os
 import world
 import dataloader
 import utils
+from world import cprint
 import torch
 from model import LightGCN
 from pprint import pprint
@@ -10,15 +11,17 @@ import time
 from tqdm import tqdm
 import Procedure
 
-dataset = dataloader.Gowalla()
-# dataset = dataloader.LastFM()
-
+if world.dataset == 'gowalla':
+    dataset = dataloader.Gowalla()
+elif world.dataset == 'lastfm':
+    dataset = dataloader.LastFM()
+    
 world.config['num_users'] = dataset.n_users
 world.config['num_items'] = dataset.m_items
 
 print('===========config================')
 pprint(world.config)
-print(world.comment)
+print("comment:", world.comment)
 print("tensorboard:", world.tensorboard)
 print("LOAD:", world.LOAD)
 print("Weight path:", world.PATH)
@@ -44,7 +47,7 @@ try:
         print(f'*end EPOCH[{epoch}/{world.TRAIN_epochs}][saved][{output_information}]')
         torch.save(Recmodel.state_dict(), os.path.join(world.PATH,"Rec-lgn.pth.tar"))
         if epoch %5 == 0 and epoch != 0:
-            bar.set_description("[TEST]")
+            cprint("[TEST]")
             testDict = dataset.getTestDict()
             Procedure.Test(dataset, Recmodel, world.top_k, epoch, w)
 finally:

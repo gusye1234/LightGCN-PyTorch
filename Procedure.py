@@ -1,6 +1,11 @@
-"""
+'''
+Created on Mar 1, 2020
+Pytorch Implementation of LightGCN in
+Xiangnan He et al. LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation
+@author: Jianbai Ye (gusye@mail.ustc.edu.cn)
+
 Design training and test process
-"""
+'''
 import world
 import numpy as np
 import torch
@@ -10,7 +15,7 @@ from pprint import pprint
 from time import time
 from tqdm import tqdm
 import model
-
+import multiprocessing
 
 
 
@@ -80,3 +85,8 @@ def Test(dataset, Recmodel, top_k, epoch, w=None):
             w.add_scalar(f'Test/Precision@{top_k}', metrics['precision'], epoch)
             w.add_scalar(f'Test/MRR@{top_k}', metrics['mrr'], epoch)
             w.add_scalar(f'Test/NDCG@{top_k}', metrics['ndcg'], epoch)
+            
+            
+            
+def test_large(dataset, Recmodel, top_k, epoch, w=None):
+    u_batch_size = world.config['test_u_batch_size']

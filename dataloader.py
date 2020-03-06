@@ -1,4 +1,9 @@
 """
+Created on Mar 1, 2020
+Pytorch Implementation of LightGCN in
+Xiangnan He et al. LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation
+
+@author: Shuxian Bi (your mail here),Jianbai Ye (gusye@mail.ustc.edu.cn)
 Design Dataset here
 Every dataset's index has to start at 0
 """
@@ -12,6 +17,7 @@ from torch.utils.data import Dataset, DataLoader
 from scipy.sparse import csr_matrix
 import scipy.sparse as sp
 import world
+from world import cprint
 from time import time
 
 class BasicDataset(Dataset):
@@ -25,6 +31,10 @@ class BasicDataset(Dataset):
     def getUserPosItems(self, users):
         raise NotImplementedError
     def getUserNegItems(self, users):
+        """
+        not necessary for large dataset
+        it's stupid to return all neg items in super large dataset
+        """
         raise NotImplementedError
     def getTestDict(self):
         raise NotImplementedError
@@ -33,8 +43,8 @@ class BasicDataset(Dataset):
         build a graph in torch.sparse.IntTensor.
         Details in NGCF's matrix form
         A = 
-            |0,   R|
-            |R^T, 0|
+            |I,   R|
+            |R^T, I|
         """
         raise NotImplementedError
 
@@ -46,7 +56,7 @@ class LastFM(BasicDataset):
     """
     def __init__(self, path="./data/lastfm"):
         # train or test
-        print("loading [last fm]")
+        cprint("loading [last fm]")
         self.mode_dict = {'train':0, "test":1}
         self.mode    = self.mode_dict['train']
         self.n_users = 1892
@@ -178,7 +188,7 @@ class Gowalla(BasicDataset):
 
     def __init__(self,config = world.config,path="./data/gowalla"):
         # train or test
-        print('loading [gowalla]')
+        cprint('loading [gowalla]')
         self.folds = config['A_n_fold']
         self.mode_dict = {'train': 0, "test": 1}
         self.mode = self.mode_dict['train']
