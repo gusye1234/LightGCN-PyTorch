@@ -85,15 +85,17 @@ def BPR_train_original(dataset, recommend_model, loss_class, epoch, neg_k=1, w=N
     
     
 def test_one_batch(X):
-    users = X[0]
-    sorted_items = X[1]
-    groundTrue = X[2]
+    sorted_items = X[0].numpy()
+    groundTrue = X[1]
+    r = utils.getLabel(groundTrue, sorted_items)
     pre, recall, ndcg = [], [], []
     for k in world.topks:
-        ret = utils.recall_precisionATk(groundTrue, sorted_items, k)
+        # ret = utils.recall_precisionATk(groundTrue, sorted_items, k)
+        ret = utils.RecallPrecision_ATk(groundTrue, r, k)
         pre.append(ret['precision'])
         recall.append(ret['recall'])
-        ndcg.append(utils.NDCGatK(groundTrue, sorted_items, k))
+        # ndcg.append(utils.NDCGatK(groundTrue, sorted_items, k))
+        ndcg.append(utils.NDCGatK_r(r, k))
     return {'recall':np.array(recall), 
             'precision':np.array(pre), 
             'ndcg':np.array(ndcg)}
@@ -142,7 +144,7 @@ def Test(dataset, Recmodel, top_k, epoch, w=None):
             rating_list.append(rating_K) 
             groundTrue_list.append(groundTrue)
         assert total_batch == len(users_list)
-        X = zip(users_list, rating_list, groundTrue_list)
+        X = zip(rating_list, groundTrue_list)
         pre_results = pool.map(test_one_batch, X)
         for result in pre_results:
             results['recall'] += result['recall'] / total_batch

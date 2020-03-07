@@ -273,6 +273,15 @@ def recall_precisionATk(test_data, pred_data, k=5):
         recall_n   += len(groundTrue)
     return {'recall': right_items/recall_n, 'precision': right_items/precis_n}
 
+def RecallPrecision_ATk(test_data, r, k):
+    right_pred = r[:, :k].sum(1)
+    precis_n = k
+    recall_n = np.array([len(test_data[i]) for i in range(len(test_data))])
+    recall = np.mean(right_pred/recall_n)
+    precis = np.mean(right_pred)/precis_n
+    return {'recall': recall, 'precision': precis}
+    
+
 def MRRatK(test_data, pred_data, k):
     """
     Mean Reciprocal Rank
@@ -291,6 +300,24 @@ def MRRatK(test_data, pred_data, k):
             
     return scores/MRR_n
 
+
+def NDCGatK_r(r, k):
+    pred_data = r[:, :k]
+    idcg = np.sum(1./np.log2(np.arange(2, k + 2)))
+    dcg = pred_data*(1./np.log2(np.arange(2, k + 2)))
+    dcg = np.sum(dcg, axis=1)
+    return np.mean(dcg)/idcg
+
+
+def getLabel(test_data, pred_data):
+    r = []
+    for i in range(len(test_data)):
+        groundTrue = test_data[i]
+        predictTopK = pred_data[i]
+        pred = list(map(lambda x: x in groundTrue, predictTopK))
+        pred = np.array(pred).astype("float")
+        r.append(pred)
+    return np.array(r)
 
 def NDCGatK(test_data, pred_data, k):
     """
