@@ -23,7 +23,7 @@ def parse_args():
                         help="the fold num used to split large adj matrix, like gowalla")
     parser.add_argument('--testbatch', type=int,default=100,
                         help="the batch size of users for testing")
-    parser.add_argument('--dataset', type=str,default='gowalla',
+    parser.add_argument('--dataset', type=str,default='lastfm',
                         help="available datasets: [lastfm, gowalla]")
     parser.add_argument('--path', type=str,default="./checkpoints",
                         help="path to save weights")
