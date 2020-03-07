@@ -137,6 +137,8 @@ def UniformSample_original(users, dataset):
     for i, user in enumerate(users):
         start = time()
         posForUser = list(allPos[i])
+        if len(posForUser) == 0:
+            continue
         sample_time2 += time() - start
         positem = np.array(random.sample(posForUser, 1)[0])
         while True:
