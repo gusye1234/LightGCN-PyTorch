@@ -21,13 +21,13 @@ def parse_args():
                         help="the batch size for bpr loss training procedure")
     parser.add_argument('--a_fold', type=int,default=100,
                         help="the fold num used to split large adj matrix, like gowalla")
-    parser.add_argument('--testbatch', type=int,default=1000,
+    parser.add_argument('--testbatch', type=int,default=100,
                         help="the batch size of users for testing")
     parser.add_argument('--dataset', type=str,default='gowalla',
                         help="available datasets: [lastfm, gowalla]")
     parser.add_argument('--path', type=str,default="./checkpoints",
                         help="path to save weights")
-    parser.add_argument('--topks', nargs='?',default="20, 40, 60, 80, 100",
+    parser.add_argument('--topks', nargs='?',default="[20, 40, 60, 80, 100]",
                         help="@k test list")
     parser.add_argument('--tensorboard', type=bool,default="./checkpoints",
                         help="enable tensorboard")

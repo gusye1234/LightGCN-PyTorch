@@ -45,6 +45,7 @@ TRAIN_epochs = args.epochs
 LOAD = args.load
 PATH = args.path
 topks = eval(args.topks)
+topks = eval(args.topks)
 top_k = 5
 tensorboard = args.tensorboard
 comment = args.comment

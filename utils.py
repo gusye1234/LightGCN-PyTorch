@@ -220,7 +220,7 @@ def getAllData(dataset, gamma=None):
 
 def minibatch(*tensors, **kwargs):
 
-    batch_size = kwargs.get('batch_size', world.config['batch_size'])
+    batch_size = kwargs.get('batch_size', world.config['bpr_batch_size'])
 
     if len(tensors) == 1:
         tensor = tensors[0]
