@@ -10,6 +10,7 @@ import os
 import torch
 from enum import Enum
 from parse import parse_args
+import multiprocessing
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 args = parse_args()
@@ -27,6 +28,8 @@ config['test_u_batch_size'] = args.testbatch
 
 GPU = torch.cuda.is_available()
 device = torch.device('cuda' if GPU else "cpu")
+CORES = multiprocessing.cpu_count() // 2
+
 #device = torch.device("cpu")
 
 dataset = args.dataset

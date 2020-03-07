@@ -17,7 +17,7 @@ from tqdm import tqdm
 import model
 import multiprocessing
 
-CORES = multiprocessing.cpu_count() // 2
+CORES = world.CORES
 
 
 def BPR_train(dataset,recommend_model, loss_class, epoch, neg_k = 4,w=None):

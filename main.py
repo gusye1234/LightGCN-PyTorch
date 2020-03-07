@@ -21,6 +21,7 @@ world.config['num_items'] = dataset.m_items
 
 print('===========config================')
 pprint(world.config)
+print("cores for test:", world.CORES)
 print("comment:", world.comment)
 print("tensorboard:", world.tensorboard)
 print("LOAD:", world.LOAD)
