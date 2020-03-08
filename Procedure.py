@@ -99,7 +99,7 @@ def test_one_batch(X):
             'ndcg':np.array(ndcg)}
         
             
-def Test(dataset, Recmodel, top_k, epoch, w=None):
+def Test(dataset, Recmodel, top_k, epoch, w=None, multicore=0):
     u_batch_size = world.config['test_u_batch_size']
     dataset : utils.BasicDataset
     testDict : dict = dataset.getTestDict()
@@ -107,7 +107,8 @@ def Test(dataset, Recmodel, top_k, epoch, w=None):
     # eval mode with no dropout
     Recmodel = Recmodel.eval()
     max_K = max(world.topks)
-    pool = multiprocessing.Pool(CORES)
+    if multicore == 1:
+        pool = multiprocessing.Pool(CORES)
     results = {'precision': np.zeros(len(world.topks)), 
               'recall': np.zeros(len(world.topks)), 
               'ndcg': np.zeros(len(world.topks))}
@@ -143,7 +144,12 @@ def Test(dataset, Recmodel, top_k, epoch, w=None):
             groundTrue_list.append(groundTrue)
         assert total_batch == len(users_list)
         X = zip(users_list, rating_list, groundTrue_list)
-        pre_results = pool.map(test_one_batch, X)
+        if multicore == 1:
+            pre_results = pool.map(test_one_batch, X)
+        else:
+            pre_results = []
+            for x in X:
+                pre_results.append(test_one_batch(x))
         for result in pre_results:
             results['recall'] += result['recall'] / total_batch
             results['precision'] += result['precision'] / total_batch
@@ -155,7 +161,8 @@ def Test(dataset, Recmodel, top_k, epoch, w=None):
                          {str(world.topks[i]): results['precision'][i] for i in range(len(world.topks))}, epoch)
             w.add_scalars(f'Test/NDCG@{world.topks}',
                          {str(world.topks[i]): results['ndcg'][i] for i in range(len(world.topks))}, epoch)
-        pool.close()
+        if multicore == 1:
+            pool.close()
         return results
         
     

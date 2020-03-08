@@ -50,7 +50,7 @@ try:
         if epoch %5 == 0 and epoch != 0:
             cprint("[TEST]")
             testDict = dataset.getTestDict()
-            Procedure.Test(dataset, Recmodel, world.top_k, epoch, w)
+            Procedure.Test(dataset, Recmodel, world.top_k, epoch, w, world.config['multicore'])
 finally:
     if world.tensorboard:
         w.close()
