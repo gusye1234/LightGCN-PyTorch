@@ -256,79 +256,52 @@ def shuffle(*arrays, **kwargs):
 
 # ====================Metrics==============================
 # =========================================================
-
-def recall_precisionATk(test_data, pred_data, k=5):
+def RecallPrecision_ATk(test_data, r, k):
     """
     test_data should be a list? cause users may have different amount of pos items. shape (test_batch, k)
     pred_data : shape (test_batch, k) NOTE: pred_data should be pre-sorted
     k : top-k
     """
-    assert len(test_data) == len(pred_data)
-    right_items = 0
-    recall_n    = 0
-    precis_n    = len(test_data)*k
-    for i in range(len(test_data)):
-        groundTrue = test_data[i]
-        predictTopK= pred_data[i][:k]
-        bingo      = list(filter(lambda x: x in groundTrue, predictTopK))
-        right_items+= len(bingo)
-        recall_n   += len(groundTrue)
-    return {'recall': right_items/recall_n, 'precision': right_items/precis_n}
+    right_pred = r[:, :k].sum(1)
+    precis_n = k
+    recall_n = np.array([len(test_data[i]) for i in range(len(test_data))])
+    recall = np.mean(right_pred/recall_n)
+    precis = np.mean(right_pred)/precis_n
+    return {'recall': recall, 'precision': precis}
 
-def MRRatK(test_data, pred_data, k):
+
+def MRRatK_r(r, k):
     """
     Mean Reciprocal Rank
     """
-    MRR_n = len(test_data)
-    scores = 0.
-    for i in range(len(test_data)):
-        groundTrue = test_data[i]
-        prediction = pred_data[i]
-        for j, item in enumerate(prediction):
-            if j >= k:
-                break
-            if item in groundTrue:
-                scores += 1/(j+1)
-                break
-            
-    return scores/MRR_n
+    pred_data = r[:, :k]
+    scores = 1./np.arange(1, k+1)
+    pred_data = pred_data/scores
+    pred_data = pred_data.sum(1)
+    return np.mean(pred_data)
 
 
-def NDCGatK(test_data, pred_data, k):
+def NDCGatK_r(r, k):
     """
     Normalized Discounted Cumulative Gain
     rel_i = 1 or 0, so 2^{rel_i} - 1 = 1 or 0
-    NOTE implementation is slooooow
     """
-    pred_rel = []
-    idcg = []
+    pred_data = r[:, :k]
+    idcg = np.sum(1./np.log2(np.arange(2, k + 2)))
+    dcg = pred_data*(1./np.log2(np.arange(2, k + 2)))
+    dcg = np.sum(dcg, axis=1)
+    return np.mean(dcg)/idcg
+
+
+def getLabel(test_data, pred_data):
+    r = []
     for i in range(len(test_data)):
         groundTrue = test_data[i]
-        predictTopK = pred_data[i][:k]
+        predictTopK = pred_data[i]
         pred = list(map(lambda x: x in groundTrue, predictTopK))
         pred = np.array(pred).astype("float")
-        pred_rel.append(pred)
+        r.append(pred)
+    return np.array(r)
 
-
-        if len(groundTrue) < k:
-            coeForIdcg = np.log2(np.arange(2, len(groundTrue)+2))
-        else:
-            coeForIdcg = np.log2(np.arange(2, k + 2))
-
-        idcgi = np.sum(1./coeForIdcg)
-        idcg.append(idcgi)
-        # print(pred)
-
-    pred_rel = np.array(pred_rel)
-    idcg = np.array(idcg)
-    coefficients = np.log2(np.arange(2, k+2))
-    # print(coefficients.shape, pred_rel.shape)
-    # print(coefficients)
-    assert len(coefficients) == pred_rel.shape[-1]
-    
-    pred_rel = pred_rel/coefficients
-    dcg = np.sum(pred_rel, axis=1)
-    ndcg = dcg/idcg
-    return np.mean(ndcg)
 # ====================end Metrics=============================
 # =========================================================
