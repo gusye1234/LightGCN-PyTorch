@@ -38,7 +38,7 @@ class LightGCN(nn.Module):
             num_embeddings=self.num_items, embedding_dim=self.latent_dim)
         self.f = nn.Sigmoid()
         self.Graph = self.dataset.getSparseGraph()
-        print("lgn is already to go")
+        print(f"lgn is already to go(dropout:{self.config['dropout']})")
 
         # print("save_txt")
     def __dropout_x(self, x, keep_prob):
@@ -77,6 +77,7 @@ class LightGCN(nn.Module):
         embs = [all_emb]
         if self.config['dropout']:
             if self.training:
+                print("droping")
                 g_droped = self.__dropout(self.keep_prob)
             else:
                 g_droped = self.Graph        
@@ -98,7 +99,15 @@ class LightGCN(nn.Module):
         light_out = torch.mean(embs, dim=1)
         users, items = torch.split(light_out, [self.num_users, self.num_items])
         return users, items
-        
+    
+    def getEmbedding(self, users, pos_items, neg_items):
+        all_users, all_items = self.computer()
+        users_emb = all_users[users]
+        pos_emb = all_items[pos_items]
+        neg_emb = all_items[neg_items]
+        return users_emb, pos_emb, neg_emb
+       
+       
     def forward(self, users, items):
         # compute embedding
         all_users, all_items = self.computer()

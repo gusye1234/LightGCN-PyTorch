@@ -14,7 +14,7 @@ import multiprocessing
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 args = parse_args()
-
+print(args)
 config = {}
 all_dataset = ['lastfm', 'gowalla']
 # config['batch_size'] = 4096
@@ -26,6 +26,8 @@ config['keep_prob']  = args.keepprob
 config['A_n_fold'] = args.a_fold
 config['test_u_batch_size'] = args.testbatch
 config['multicore'] = args.multicore
+config['lr'] = args.lr
+config['decay'] = args.decay
 
 GPU = torch.cuda.is_available()
 device = torch.device('cuda' if GPU else "cpu")
@@ -42,14 +44,15 @@ if dataset in ['gowalla']:
     config['bigdata'] = True
 else:
     config['A_split'] = False
+    config['bigdata'] = False
 
 
 
 TRAIN_epochs = args.epochs
 LOAD = args.load
 PATH = args.path
-topks = eval(args.topks)
-topks = eval(args.topks)
+# topks = eval(args.topks)
+topks = [5]
 top_k = 5
 tensorboard = args.tensorboard
 comment = args.comment

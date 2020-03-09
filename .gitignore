@@ -9,5 +9,6 @@
 *.cfg
 *.png
 *.sqlite3
+checkpoints/
 runs/
 __pycache__/
