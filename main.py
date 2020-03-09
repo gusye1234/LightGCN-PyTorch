@@ -59,6 +59,10 @@ try:
             cprint("[TEST]")
             testDict = dataset.getTestDict()
             Procedure.Test(dataset, Recmodel, world.top_k, epoch, w, world.config['multicore'])
+#             if world.config['bigdata']:
+#                 Procedure.Test(dataset, Recmodel, world.top_k, epoch, w, world.config['multicore'])
+#             else:
+#                 Procedure.Test_small(dataset, Recmodel, world.top_k, epoch, w)
 finally:
     if world.tensorboard:
         w.close()

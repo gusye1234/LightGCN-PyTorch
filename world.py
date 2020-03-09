@@ -44,13 +44,15 @@ if dataset in ['gowalla']:
     config['bigdata'] = True
 else:
     config['A_split'] = False
+    config['bigdata'] = False
 
 
 
 TRAIN_epochs = args.epochs
 LOAD = args.load
 PATH = args.path
-topks = eval(args.topks)
+# topks = eval(args.topks)
+topks = [5]
 top_k = 5
 tensorboard = args.tensorboard
 comment = args.comment
