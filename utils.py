@@ -31,7 +31,7 @@ class BPRLoss:
         
         bpr  = self.f(pos_scores - neg_scores)
         bpr  = -torch.log(bpr)
-        loss = torch.sum(bpr)
+        loss = torch.mean(bpr)
         
         self.opt.zero_grad()
         loss.backward()
