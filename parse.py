@@ -15,7 +15,11 @@ def parse_args():
                         help="the embedding size of lightGCN")
     parser.add_argument('--layer', type=int,default=2,
                         help="the layer num of lightGCN")
-    parser.add_argument('--dropout', type=bool,default=False,
+    parser.add_argument('--lr', type=float,default=0.01,
+                        help="the learning rate")
+    parser.add_argument('--decay', type=float,default=1e-5,
+                        help="the weight decay for l2 normalizaton")
+    parser.add_argument('--dropout', type=int,default=0,
                         help="using the dropout or not")
     parser.add_argument('--keepprob', type=float,default=0.6,
                         help="the batch size for bpr loss training procedure")
@@ -27,12 +31,12 @@ def parse_args():
                         help="available datasets: [lastfm, gowalla]")
     parser.add_argument('--path', type=str,default="./checkpoints",
                         help="path to save weights")
-    parser.add_argument('--topks', nargs='?',default="[20, 40, 60, 80, 100]",
+    parser.add_argument('--topks', nargs='?',default="[5, 20, 40, 60, 80, 100]",
                         help="@k test list")
-    parser.add_argument('--tensorboard', type=bool,default="./checkpoints",
+    parser.add_argument('--tensorboard', type=int,default=1,
                         help="enable tensorboard")
     parser.add_argument('--comment', type=str,default="lgn")
-    parser.add_argument('--load', type=bool,default=False)
+    parser.add_argument('--load', type=int,default=0)
     parser.add_argument('--epochs', type=int,default=1000)
     parser.add_argument('--multicore', type=int, default=0, help='whether we use multiprocessing or not in test')
     

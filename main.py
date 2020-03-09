@@ -31,8 +31,11 @@ print('===========end===================')
 
 Recmodel = LightGCN(world.config, dataset)
 Recmodel = Recmodel.to(world.device)
-bpr = utils.BPRLoss(Recmodel)
-
+bpr = utils.BPRLoss(Recmodel, world.config)
+if world.LOAD:
+    load_path = os.path.join(world.PATH,"Rec-lgn.pth.tar")
+    Recmodel.load_state_dict(torch.load(load_path))
+    world.cprint(f"loaded model weights from {load_path}") 
 Neg_k = 1
 
 # init tensorboard
@@ -40,6 +43,7 @@ if world.tensorboard:
     w : SummaryWriter = SummaryWriter("./runs/"+time.strftime("%m-%d-%Hh%Mm%Ss-") + "-" + world.comment)
 else:
     w = None
+    world.cprint("not enable tensorflowboard")
     
 try:
     for epoch in range(world.TRAIN_epochs):
@@ -47,7 +51,7 @@ try:
         print(f'EPOCH[{epoch}/{world.TRAIN_epochs}]')
         # output_information = Procedure.BPR_train(dataset, Recmodel, bpr, epoch, neg_k=Neg_k,w=w)
         start = time.time()
-        output_information = Procedure.BPR_train_original(dataset, Recmodel, bpr, epoch, neg_k=Neg_k,w=w)
+        output_information = Procedure.BPR_train(dataset, Recmodel, bpr, epoch, neg_k=Neg_k,w=w)
         print(f"[TOTAL TIME] {time.time() - start}")
         print(f'[saved][{output_information}]')
         torch.save(Recmodel.state_dict(), os.path.join(world.PATH,"Rec-lgn.pth.tar"))

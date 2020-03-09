@@ -17,21 +17,31 @@ import random
 
         
 class BPRLoss:
-    def __init__(self, recmodel, lr=0.003, weight_decay=0.005):
+    def __init__(self, recmodel,config):
         recmodel : LightGCN
         self.model = recmodel
         self.f = nn.Sigmoid()
-        self.opt = optim.Adam(recmodel.parameters(), lr=lr, weight_decay=weight_decay)
+        self.weight_decay = config['decay']
+        self.lr = config['lr']
+        self.opt = optim.Adam(recmodel.parameters(), lr=self.lr)
+        
         
     def stageOne(self, users, pos, neg):
-        pos_scores = self.model(users, pos)
+        users_emb ,pos_emb, neg_emb = self.model.getEmbedding(users, pos, neg)
+        # print(users_emb.dtype,pos_emb.dtype, neg_emb.dtype)
+        reg_loss = self.weight_decay*(torch.norm(users_emb, 2) + torch.norm(pos_emb, 2) + torch.norm(neg_emb, 2))
+        
+        pos_scores = torch.mul(users_emb, pos_emb)
+        pos_scores = torch.sum(pos_scores, dim=1)
         # print('pos:', pos_scores[:5])
-        neg_scores = self.model(users, neg)
+        neg_scores = torch.mul(users_emb, neg_emb)
+        neg_scores = torch.sum(neg_scores, dim=1)
         # print('neg:', neg_scores[:5])
         
         bpr  = self.f(pos_scores - neg_scores)
         bpr  = -torch.log(bpr)
         loss = torch.mean(bpr)
+        loss = loss + reg_loss
         
         self.opt.zero_grad()
         loss.backward()
