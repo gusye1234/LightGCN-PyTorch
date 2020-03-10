@@ -52,8 +52,8 @@ TRAIN_epochs = args.epochs
 LOAD = args.load
 PATH = args.path
 # topks = eval(args.topks)
-topks = [5]
-top_k = 5
+topks = [20, 40]
+top_k = 20
 tensorboard = args.tensorboard
 comment = args.comment
 # let pandas shut up
