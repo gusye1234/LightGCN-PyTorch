@@ -29,9 +29,11 @@ class BPRLoss:
     def stageOne(self, users, pos, neg):
         users_emb ,pos_emb, neg_emb = self.model.getEmbedding(users, pos, neg)
         # print(users_emb.dtype,pos_emb.dtype, neg_emb.dtype)
-        reg_loss = self.weight_decay*(torch.norm(users_emb, 2) + torch.norm(pos_emb, 2) + torch.norm(neg_emb, 2))
+        reg_loss = (1/2)*self.weight_decay*(torch.norm(users_emb, 2) + torch.norm(pos_emb, 2) + torch.norm(neg_emb, 2))
+        reg_loss = reg_loss/float(len(users_emb))
         
-        pos_scores = torch.mul(users_emb, pos_emb)
+        
+        pos_scores = torch.mul(users_emb, pos_esmb)
         pos_scores = torch.sum(pos_scores, dim=1)
         # print('pos:', pos_scores[:5])
         neg_scores = torch.mul(users_emb, neg_emb)
@@ -287,7 +289,7 @@ def MRRatK_r(r, k):
     Mean Reciprocal Rank
     """
     pred_data = r[:, :k]
-    scores = 1./np.arange(1, k+1)
+    scores = np.log2(1./np.arange(1, k+1))
     pred_data = pred_data/scores
     pred_data = pred_data.sum(1)
     return np.sum(pred_data)
@@ -299,10 +301,12 @@ def NDCGatK_r(r, k):
     rel_i = 1 or 0, so 2^{rel_i} - 1 = 1 or 0
     """
     pred_data = r[:, :k]
-    idcg = np.sum(1./np.log2(np.arange(2, k + 2)))
+    max_r = np.sort(pred_data, axis=1)[:, ::-1]
+    idcg = np.sum(max_r * 1./np.log2(np.arange(2, k + 2)), axis=1)
     dcg = pred_data*(1./np.log2(np.arange(2, k + 2)))
-    dcg = np.sum(dcg, axis=1)
-    return np.sum(dcg)/idcg
+    ndcg = dcg/idcg
+    ndcg[np.isnan(ndcg)] = 0.
+    return np.sum(ndcg)
 
 
 def getLabel(test_data, pred_data):
@@ -313,7 +317,7 @@ def getLabel(test_data, pred_data):
         pred = list(map(lambda x: x in groundTrue, predictTopK))
         pred = np.array(pred).astype("float")
         r.append(pred)
-    return np.array(r)
+    return np.array(r).astype('float')
 
 # ====================end Metrics=============================
 # =========================================================
