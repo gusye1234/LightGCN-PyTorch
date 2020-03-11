@@ -305,10 +305,7 @@ def NDCGatK_r(r, k):
     idcg = np.sum(max_r * 1./np.log2(np.arange(2, k + 2)), axis=1)
     dcg = pred_data*(1./np.log2(np.arange(2, k + 2)))
     dcg = np.sum(dcg, axis=1)
-<<<<<<< HEAD
     idcg[idcg == 0.] = 1.
-=======
->>>>>>> fa0226e9d91e3ae26c181b6923cb6cc979c1ea40
     ndcg = dcg/idcg
     ndcg[np.isnan(ndcg)] = 0.
     return np.sum(ndcg)
