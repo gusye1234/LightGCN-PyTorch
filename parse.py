@@ -18,7 +18,7 @@ def parse_args():
                         help="the layer num of lightGCN")
     parser.add_argument('--lr', type=float,default=0.01,
                         help="the learning rate")
-    parser.add_argument('--decay', type=float,default=1e-6,
+    parser.add_argument('--decay', type=float,default=1e-4,
                         help="the weight decay for l2 normalizaton")
     parser.add_argument('--dropout', type=int,default=0,
                         help="using the dropout or not")

@@ -33,7 +33,7 @@ class BPRLoss:
         reg_loss = reg_loss/float(len(users_emb))
         
         
-        pos_scores = torch.mul(users_emb, pos_esmb)
+        pos_scores = torch.mul(users_emb, pos_emb)
         pos_scores = torch.sum(pos_scores, dim=1)
         # print('pos:', pos_scores[:5])
         neg_scores = torch.mul(users_emb, neg_emb)

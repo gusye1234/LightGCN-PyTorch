@@ -132,7 +132,7 @@ def Test(dataset, Recmodel, top_k, epoch, w=None, multicore=0):
             batch_users_gpu = batch_users_gpu.to(world.device)
 
             rating = Recmodel.getUsersRating(batch_users_gpu)
-            rating = rating.cpu()
+            #rating = rating.cpu()
             exclude_index = []
             exclude_items = []
             for range_i, items in enumerate(allPos):
