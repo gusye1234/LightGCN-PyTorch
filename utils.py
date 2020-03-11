@@ -30,8 +30,10 @@ class BPRLoss:
         users_emb ,pos_emb, neg_emb = self.model.getEmbedding(users, pos, neg)
         # print(users_emb.dtype,pos_emb.dtype, neg_emb.dtype)
         reg_loss = (1/2)*self.weight_decay*(torch.norm(users_emb, 2) + torch.norm(pos_emb, 2) + torch.norm(neg_emb, 2))
+        reg_loss = reg_loss/float(len(users_emb))
         
-        pos_scores = torch.mul(users_emb, pos_emb)
+        
+        pos_scores = torch.mul(users_emb, pos_esmb)
         pos_scores = torch.sum(pos_scores, dim=1)
         # print('pos:', pos_scores[:5])
         neg_scores = torch.mul(users_emb, neg_emb)
