@@ -37,10 +37,12 @@ class BPRLoss:
         neg_scores = torch.mul(users_emb, neg_emb)
         neg_scores = torch.sum(neg_scores, dim=1)
         # print('neg:', neg_scores[:5])
-        
+        '''
         bpr  = self.f(pos_scores - neg_scores)
         bpr  = -torch.log(bpr)
         loss = torch.mean(bpr)
+        '''
+        loss = torch.mean(torch.nn.functional.softplus(-(pos_scores - neg_scores)))
         loss = loss + reg_loss
         
         self.opt.zero_grad()
