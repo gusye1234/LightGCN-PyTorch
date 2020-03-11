@@ -304,6 +304,8 @@ def NDCGatK_r(r, k):
     max_r = np.sort(pred_data, axis=1)[:, ::-1]
     idcg = np.sum(max_r * 1./np.log2(np.arange(2, k + 2)), axis=1)
     dcg = pred_data*(1./np.log2(np.arange(2, k + 2)))
+    dcg = np.sum(dcg, axis=1)
+    idcg[idcg == 0.] = 1.
     ndcg = dcg/idcg
     ndcg[np.isnan(ndcg)] = 0.
     return np.sum(ndcg)
