@@ -36,6 +36,8 @@ class LightGCN(nn.Module):
             num_embeddings=self.num_users, embedding_dim=self.latent_dim)
         self.embedding_item = torch.nn.Embedding(
             num_embeddings=self.num_items, embedding_dim=self.latent_dim)
+        nn.init.xavier_uniform_(self.embedding_user.weight, gain=1)
+        nn.init.xavier_uniform_(self.embedding_item.weight, gain=1)
         self.f = nn.Sigmoid()
         self.Graph = self.dataset.getSparseGraph()
         print(f"lgn is already to go(dropout:{self.config['dropout']})")

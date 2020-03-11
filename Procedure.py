@@ -157,9 +157,9 @@ def Test(dataset, Recmodel, top_k, epoch, w=None, multicore=0):
             results['recall'] += result['recall']
             results['precision'] += result['precision']
             results['ndcg'] += result['ndcg']
-        results['recall'] /= len(users)
-        results['precision'] /= len(users)
-        results['ndcg'] /= len(users)
+        results['recall'] /= float(len(users))
+        results['precision'] /= float(len(users))
+        results['ndcg'] /= float(len(users))
         if world.tensorboard:
             w.add_scalars(f'Test/Recall@{world.topks}',
                           {str(world.topks[i]): results['recall'][i] for i in range(len(world.topks))}, epoch)

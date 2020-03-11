@@ -51,7 +51,7 @@ try:
         print(f'EPOCH[{epoch}/{world.TRAIN_epochs}]')
         # output_information = Procedure.BPR_train(dataset, Recmodel, bpr, epoch, neg_k=Neg_k,w=w)
         start = time.time()
-        output_information = Procedure.BPR_train(dataset, Recmodel, bpr, epoch, neg_k=Neg_k,w=w)
+        output_information = Procedure.BPR_train_original(dataset, Recmodel, bpr, epoch, neg_k=Neg_k,w=w)
         print(f"[TOTAL TIME] {time.time() - start}")
         print(f'[saved][{output_information}]')
         torch.save(Recmodel.state_dict(), os.path.join(world.PATH,"Rec-lgn.pth.tar"))
