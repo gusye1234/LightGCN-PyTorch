@@ -142,7 +142,7 @@ def Test(dataset, Recmodel, top_k, epoch, w=None, multicore=0):
             _, rating_K = torch.topk(rating, k=max_K)
             del rating
             users_list.append(batch_users)
-            rating_list.append(rating_K)
+            rating_list.append(rating_K.cpu())
             groundTrue_list.append(groundTrue)
         assert total_batch == len(users_list)
         X = zip(rating_list, groundTrue_list)
