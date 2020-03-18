@@ -22,7 +22,7 @@ CORES = multiprocessing.cpu_count() // 2
 
 def BPR_train(dataset,recommend_model, loss_class, epoch, neg_k = 4,w=None):
     Recmodel = recommend_model
-    Recmodel.train()
+    Recmodel = Recmodel.train()
     bpr : utils.BPRLoss = loss_class  
     allusers = list(range(dataset.n_users))        
     S, sam_time = utils.UniformSample_allpos_largeDataset(allusers, dataset, neg_k)
@@ -54,7 +54,7 @@ def BPR_train(dataset,recommend_model, loss_class, epoch, neg_k = 4,w=None):
 
 def BPR_train_original(dataset, recommend_model, loss_class, epoch, neg_k=1, w=None):
     Recmodel = recommend_model
-    Recmodel.train()
+    Recmodel = Recmodel.train()
     bpr: utils.BPRLoss = loss_class
     allusers = list(range(dataset.n_users))
     S, sam_time = utils.UniformSample_original(allusers, dataset)
@@ -85,7 +85,7 @@ def BPR_train_original(dataset, recommend_model, loss_class, epoch, neg_k=1, w=N
     
     
 def test_one_batch(X):
-    sorted_items = X[0].numpy()
+    sorted_items = X[0].numpy().astype('int')
     groundTrue = X[1]
     r = utils.getLabel(groundTrue, sorted_items)
     pre, recall, ndcg = [], [], []
