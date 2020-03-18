@@ -11,6 +11,7 @@ import torch
 from enum import Enum
 from parse import parse_args
 import multiprocessing
+import numpy as np
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 args = parse_args()
@@ -28,6 +29,11 @@ config['test_u_batch_size'] = args.testbatch
 config['multicore'] = args.multicore
 config['lr'] = args.lr
 config['decay'] = args.decay
+config['pretrain'] = args.pretrain
+
+if args.pretrain == 1:
+    config['user_emb'] = np.load('data/' + args.dataset + '/user_emb.npy')
+    config['item_emb'] = np.load('data/' + args.dataset + '/item_emb.npy')
 
 GPU = torch.cuda.is_available()
 device = torch.device('cuda' if GPU else "cpu")
@@ -52,7 +58,7 @@ TRAIN_epochs = args.epochs
 LOAD = args.load
 PATH = args.path
 # topks = eval(args.topks)
-topks = [20, 40]
+topks = [20]
 top_k = 20
 tensorboard = args.tensorboard
 comment = args.comment
