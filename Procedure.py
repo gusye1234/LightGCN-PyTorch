@@ -69,6 +69,8 @@ def BPR_train_original(dataset, recommend_model, loss_class, epoch, neg_k=1, w=N
     users, posItems, negItems = utils.shuffle(users, posItems, negItems)
     total_batch = len(users) // world.config['bpr_batch_size'] + 1
     aver_loss = 0.
+    model_loss = 0.
+    reg_loss = 0.
     for (batch_i,
          (batch_users,
           batch_pos,
@@ -76,12 +78,16 @@ def BPR_train_original(dataset, recommend_model, loss_class, epoch, neg_k=1, w=N
                                                    posItems,
                                                    negItems,
                                                    batch_size=world.config['bpr_batch_size'])):
-        cri = bpr.stageOne(batch_users, batch_pos, batch_neg)
-        aver_loss += cri
+        cri, reg = bpr.stageOne(batch_users, batch_pos, batch_neg)
+        model_loss += cri
+        reg_loss += reg
+        aver_loss = aver_loss + cri + reg
         if world.tensorboard:
             w.add_scalar(f'BPRLoss/BPR', cri, epoch * int(len(users) / world.config['bpr_batch_size']) + batch_i)
     aver_loss = aver_loss / total_batch
-    return f"[BPR[aver loss{aver_loss:.3e}]"
+    model_loss = model_loss / total_batch
+    reg_loss = reg_loss / total_batch
+    return f"[BPR[aver loss{aver_loss:.3e} = {model_loss:.3e} + {reg_loss:.3e}]"
     
     
 def test_one_batch(X):

@@ -45,13 +45,13 @@ class BPRLoss:
         loss = torch.mean(bpr)
         '''
         loss = torch.mean(torch.nn.functional.softplus(neg_scores - pos_scores))
-        loss = loss + reg_loss
+        #loss = loss + reg_loss
         
         self.opt.zero_grad()
         loss.backward()
         self.opt.step()
         
-        return loss.cpu().item()
+        return loss.cpu().item(), reg_loss.cpu().item()
 
 
 
