@@ -146,7 +146,9 @@ def UniformSample_original(users, dataset):
     dataset : BasicDataset
     user_num = dataset.trainDataSize
     users = np.random.randint(0, dataset.n_users, user_num)
-    allPos = dataset.getUserPosItems(users)
+    #allPos = dataset.getUserPosItems(users)
+    allPos_list = np.array(dataset.allPos)
+    allPos = list(allPos_list(users))
     S = []
     sample_time1 = 0.
     sample_time2 = 0.
