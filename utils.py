@@ -142,12 +142,14 @@ def UniformSample_original(users, dataset):
     :return:
         np.array
     """
+    total_start = time()
     dataset : BasicDataset
+    user_num = dataset.trainDataSize
+    users = np.random.randint(0, dataset.n_users, user_num)
     allPos = dataset.getUserPosItems(users)
     S = []
     sample_time1 = 0.
     sample_time2 = 0.
-    total_start = time()
     for i, user in enumerate(users):
         start = time()
         posForUser = list(allPos[i])
