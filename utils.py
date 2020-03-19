@@ -146,19 +146,18 @@ def UniformSample_original(users, dataset):
     dataset : BasicDataset
     user_num = dataset.trainDataSize
     users = np.random.randint(0, dataset.n_users, user_num)
-    #allPos = dataset.getUserPosItems(users)
-    allPos_list = np.array(dataset.allPos)
-    allPos = list(allPos_list(users))
+    allPos = dataset.allPos
     S = []
     sample_time1 = 0.
     sample_time2 = 0.
     for i, user in enumerate(users):
         start = time()
-        posForUser = list(allPos[i])
+        posForUser = allPos[user]
         if len(posForUser) == 0:
             continue
         sample_time2 += time() - start
-        positem = np.array(random.sample(posForUser, 1)[0])
+        posindex = np.random.randint(0, len(posForUser))
+        positem = posForUser[posindex]
         while True:
             negitem = np.random.randint(0, dataset.m_items)
             if negitem in posForUser:
