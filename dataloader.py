@@ -255,7 +255,7 @@ class Gowalla(BasicDataset):
                 end = self.n_users + self.m_items
             else:
                 end = (i_fold + 1) * fold_len
-            A_fold.append(self._convert_sp_mat_to_sp_tensor(A[start:end]).to(world.device))
+            A_fold.append(self._convert_sp_mat_to_sp_tensor(A[start:end]).coalesce().to(world.device))
         return A_fold
 
     def _convert_sp_mat_to_sp_tensor(self, X):
