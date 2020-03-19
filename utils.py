@@ -27,9 +27,7 @@ class BPRLoss:
         
         
     def stageOne(self, users, pos, neg):
-        t0 = time()
         users_emb,pos_emb, neg_emb, userEmb0, posEmb0, negEmb0 = self.model.getEmbedding(users, pos, neg)
-        t0 = time() - t0
         # print(users_emb.dtype,pos_emb.dtype, neg_emb.dtype)
         reg_loss = (1/2)*self.weight_decay*(torch.norm(userEmb0, 2).pow(2) + torch.norm(posEmb0, 2).pow(2) + torch.norm(negEmb0, 2).pow(2))
         reg_loss = reg_loss/float(len(userEmb0))
@@ -48,12 +46,11 @@ class BPRLoss:
         '''
         loss = torch.mean(torch.nn.functional.softplus(neg_scores - pos_scores))
         #loss = loss + reg_loss
-        t1 = time()
+
         self.opt.zero_grad()
         loss.backward()
         self.opt.step()
-        t1 = time() -t1
-        return loss.cpu().item(), reg_loss.cpu().item(), t0, t1
+        return loss.cpu().item(), reg_loss.cpu().item()
 
 
 

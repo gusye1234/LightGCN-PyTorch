@@ -16,7 +16,7 @@ def parse_args():
                         help="the embedding size of lightGCN")
     parser.add_argument('--layer', type=int,default=3,
                         help="the layer num of lightGCN")
-    parser.add_argument('--lr', type=float,default=0.01,
+    parser.add_argument('--lr', type=float,default=0.001,
                         help="the learning rate")
     parser.add_argument('--decay', type=float,default=1e-4,
                         help="the weight decay for l2 normalizaton")

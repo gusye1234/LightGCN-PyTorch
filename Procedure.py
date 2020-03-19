@@ -78,13 +78,10 @@ def BPR_train_original(dataset, recommend_model, loss_class, epoch, neg_k=1, w=N
                                                    posItems,
                                                    negItems,
                                                    batch_size=world.config['bpr_batch_size'])):
-        cri, reg, t0, t1 = bpr.stageOne(batch_users, batch_pos, batch_neg)
+        cri, reg = bpr.stageOne(batch_users, batch_pos, batch_neg)
         model_loss += cri
         reg_loss += reg
         aver_loss = aver_loss + cri + reg
-        if batch_i == 10:
-            print(t0)
-            print(t1)
         if world.tensorboard:
             w.add_scalar(f'BPRLoss/BPR', cri, epoch * int(len(users) / world.config['bpr_batch_size']) + batch_i)
     aver_loss = aver_loss / total_batch

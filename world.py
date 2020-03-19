@@ -46,8 +46,8 @@ if dataset not in all_dataset:
     raise NotImplementedError(f"Haven't supported {dataset} yet!, try {all_dataset}")
 
 if dataset in ['gowalla']:
-    config['A_split'] = True
-    config['bigdata'] = True
+    config['A_split'] = False
+    config['bigdata'] = False
 else:
     config['A_split'] = False
     config['bigdata'] = False

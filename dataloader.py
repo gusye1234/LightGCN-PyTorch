@@ -189,6 +189,7 @@ class Gowalla(BasicDataset):
     def __init__(self,config = world.config,path="./data/gowalla"):
         # train or test
         cprint('loading [gowalla]')
+        self.split = config['A_split']
         self.folds = config['A_n_fold']
         self.mode_dict = {'train': 0, "test": 1}
         self.mode = self.mode_dict['train']
@@ -294,8 +295,13 @@ class Gowalla(BasicDataset):
                 print(f"costing {end-s}s, saved norm_mat...")
                 sp.save_npz(self.path + '/s_pre_adj_mat.npz', norm_adj)
 
-            self.Graph = self._split_A_hat(norm_adj)    
-            print("done split matrix")
+            if self.split == True:
+                self.Graph = self._split_A_hat(norm_adj)
+                print("done split matrix")
+            else:
+                self.Graph = self._convert_sp_mat_to_sp_tensor(norm_adj)
+                self.Graph = self.Graph.coalesce().to(world.device)
+                print("don't split the matrix")
         return self.Graph
 
     def __build_test(self):
