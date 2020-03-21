@@ -12,3 +12,4 @@
 checkpoints/
 runs/
 __pycache__/
+*.npy
