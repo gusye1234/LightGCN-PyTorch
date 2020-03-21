@@ -179,7 +179,7 @@ class LastFM(BasicDataset):
     def __len__(self):
         return len(self.trainUniqueUsers)
 
-class Gowalla(BasicDataset):
+class Loader(BasicDataset):
     """
     Dataset type for pytorch \n
     Incldue graph information
@@ -193,8 +193,8 @@ class Gowalla(BasicDataset):
         self.folds = config['A_n_fold']
         self.mode_dict = {'train': 0, "test": 1}
         self.mode = self.mode_dict['train']
-        self.n_users = 29858
-        self.m_items = 40981
+        self.n_users = 0
+        self.m_items = 0
         train_file = path + '/train.txt'
         test_file = path + '/test.txt'
         self.path = path
@@ -212,6 +212,8 @@ class Gowalla(BasicDataset):
                     trainUniqueUsers.append(uid)
                     trainUser.extend([uid] * len(items))
                     trainItem.extend(items)
+                    self.m_items = max(self.m_items, max(items))
+                    self.n_users = max(self.n_users, uid)
                     self.trainDataSize += len(items)
         self.trainUniqueUsers = np.array(trainUniqueUsers)
         self.trainUser = np.array(trainUser)
@@ -226,7 +228,11 @@ class Gowalla(BasicDataset):
                     testUniqueUsers.append(uid)
                     testUser.extend([uid] * len(items))
                     testItem.extend(items)
+                    self.m_items = max(self.m_items, max(items))
+                    self.n_users = max(self.n_users, uid)
                     self.testDataSize += len(items)
+        self.m_items += 1
+        self.n_users += 1
         self.testUniqueUsers = np.array(testUser)
         self.testUser = np.array(testUser)
         self.testItem = np.array(testItem)

@@ -11,8 +11,8 @@ import time
 from tqdm import tqdm
 import Procedure
 
-if world.dataset == 'gowalla':
-    dataset = dataloader.Gowalla()
+if world.dataset in ['gowalla', 'yelp2018']:
+    dataset = dataloader.Loader(path="./data/"+world.dataset)
 elif world.dataset == 'lastfm':
     dataset = dataloader.LastFM()
     

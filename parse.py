@@ -28,8 +28,8 @@ def parse_args():
                         help="the fold num used to split large adj matrix, like gowalla")
     parser.add_argument('--testbatch', type=int,default=100,
                         help="the batch size of users for testing")
-    parser.add_argument('--dataset', type=str,default='gowalla',
-                        help="available datasets: [lastfm, gowalla]")
+    parser.add_argument('--dataset', type=str,default='yelp2018',
+                        help="available datasets: [lastfm, gowalla, yelp2018]")
     parser.add_argument('--path', type=str,default="./checkpoints",
                         help="path to save weights")
     parser.add_argument('--topks', nargs='?',default="[20]",
@@ -40,6 +40,6 @@ def parse_args():
     parser.add_argument('--load', type=int,default=0)
     parser.add_argument('--epochs', type=int,default=1000)
     parser.add_argument('--multicore', type=int, default=0, help='whether we use multiprocessing or not in test')
-    parser.add_argument('--pretrain', type=int, default=1, help='whether we use pretrained weight or not')
+    parser.add_argument('--pretrain', type=int, default=0, help='whether we use pretrained weight or not')
     
     return parser.parse_args()
