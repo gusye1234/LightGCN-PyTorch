@@ -29,7 +29,9 @@ class BPRLoss:
     def stageOne(self, users, pos, neg):
         users_emb,pos_emb, neg_emb, userEmb0, posEmb0, negEmb0 = self.model.getEmbedding(users, pos, neg)
         # print(users_emb.dtype,pos_emb.dtype, neg_emb.dtype)
-        reg_loss = (1/2)*self.weight_decay*(torch.norm(userEmb0, 2).pow(2) + torch.norm(posEmb0, 2).pow(2) + torch.norm(negEmb0, 2).pow(2))
+        reg_loss = (1/2)*self.weight_decay*(torch.norm(userEmb0, 2).pow(2) +
+                                            torch.norm(posEmb0, 2).pow(2) + 
+                                            torch.norm(negEmb0, 2).pow(2))
         reg_loss = reg_loss/float(len(userEmb0))
         
         
@@ -303,7 +305,9 @@ def NDCGatK_r(r, k):
     rel_i = 1 or 0, so 2^{rel_i} - 1 = 1 or 0
     """
     pred_data = r[:, :k]
-    max_r = np.sort(pred_data, axis=1)[:, ::-1]
+    max_r = np.sort(r, axis=1)[:, ::-1]
+    max_r = max_r[:, :k]
+    # max_r = np.sort(pred_data, axis=1)[:, ::-1]
     idcg = np.sum(max_r * 1./np.log2(np.arange(2, k + 2)), axis=1)
     dcg = pred_data*(1./np.log2(np.arange(2, k + 2)))
     dcg = np.sum(dcg, axis=1)
