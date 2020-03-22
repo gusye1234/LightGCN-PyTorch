@@ -2,8 +2,6 @@
 
 *still testing*
 
-refer to [lightGCN](https://arxiv.org/abs/2002.02126)
-
 This is our Pytorch implementation for the paper:
 
 >Xiangnan He, Kuan Deng ,Xiang Wang, Yan Li, Yongdong Zhang, Meng Wang(2020). LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation, [Paper in arXiv](https://arxiv.org/abs/2002.02126).
@@ -12,21 +10,27 @@ Author: Prof. Xiangnan He (staff.ustc.edu.cn/~hexn/)
 
 (Also see Tensorflow [implementation](https://github.com/kuandeng/LightGCN))
 
+## Introduction
+
+In this work, we aim to simplify the design of GCN to make it more concise and appropriate for recommendation. We propose a new model named LightGCN,including only the most essential component in GCN—neighborhood aggregation—for collaborative filtering
 
 
 
+## Enviroment Requirement
+
+`pip install requirements.txt`
 
 
 
-**usage**:
+## Dataset
+
+We provide three processed datasets: Gowalla, Yelp2018 and Amazon-book and one small dataset LastFM.
+
+see more in `dataloader.py`
+
+## usage
 
 ```shell
-usage: main.py [-h] [--bpr_batch BPR_BATCH] [--recdim RECDIM] [--layer LAYER]
-               [--dropout DROPOUT] [--keepprob KEEPPROB] [--a_fold A_FOLD]
-               [--testbatch TESTBATCH] [--dataset DATASET] [--path PATH]
-               [--topks [TOPKS]] [--tensorboard TENSORBOARD]
-               [--comment COMMENT] [--load LOAD] [--epochs EPOCHS]
-
 Go lightGCN
 
 optional arguments:
@@ -35,6 +39,8 @@ optional arguments:
                         the batch size for bpr loss training procedure
   --recdim RECDIM       the embedding size of lightGCN
   --layer LAYER         the layer num of lightGCN
+  --lr LR               the learning rate
+  --decay DECAY         the weight decay for l2 normalizaton
   --dropout DROPOUT     using the dropout or not
   --keepprob KEEPPROB   the batch size for bpr loss training procedure
   --a_fold A_FOLD       the fold num used to split large adj matrix, like
@@ -49,11 +55,12 @@ optional arguments:
   --comment COMMENT
   --load LOAD
   --epochs EPOCHS
+  --multicore MULTICORE
+                        whether we use multiprocessing or not in test
+  --pretrain PRETRAIN   whether we use pretrained weight or not
 ```
 
-
-
-**notes:**
+## notes:
 
 code structure is below.
 
