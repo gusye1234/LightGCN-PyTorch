@@ -76,3 +76,14 @@ code
 ```
 
 if you want to run lightGCN on your own dataset, you should go to `dataloader.py`, and implement a dataloader.
+
+## Results
+
+gowalla:
+
+|             | Recall in paper | Recall in `torch` |
+| ----------- | --------------- | ----------------- |
+| **layer=1** | 0.1726          | 0.1692            |
+| **layer=2** | 0.1786          | 0.1783            |
+| **layer=3** | 0.1809          | 0.1807            |
+
