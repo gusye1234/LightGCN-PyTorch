@@ -96,12 +96,10 @@ def test_one_batch(X):
     r = utils.getLabel(groundTrue, sorted_items)
     pre, recall, ndcg = [], [], []
     for k in world.topks:
-        # ret = utils.recall_precisionATk(groundTrue, sorted_items, k)
         ret = utils.RecallPrecision_ATk(groundTrue, r, k)
         pre.append(ret['precision'])
         recall.append(ret['recall'])
-        # ndcg.append(utils.NDCGatK(groundTrue, sorted_items, k))
-        ndcg.append(utils.NDCGatK_r(r, k))
+        ndcg.append(utils.NDCGatK_test_r(groundTrue,r,k))
     return {'recall':np.array(recall), 
             'precision':np.array(pre), 
             'ndcg':np.array(ndcg)}
