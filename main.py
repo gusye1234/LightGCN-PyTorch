@@ -11,6 +11,13 @@ import time
 from tqdm import tqdm
 import Procedure
 
+seed = 2020
+np.random.seed(seed)   
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+torch.manual_seed(seed)
+
 if world.dataset in ['gowalla', 'yelp2018']:
     dataset = dataloader.Loader(path="./data/"+world.dataset)
 elif world.dataset == 'lastfm':
@@ -60,10 +67,6 @@ try:
             testDict = dataset.getTestDict()
             Procedure.Test(dataset, Recmodel, world.top_k, epoch, w, world.config['multicore'])
         print(f"[TOTAL TIME] {time.time() - start}")
-#             if world.config['bigdata']:
-#                 Procedure.Test(dataset, Recmodel, world.top_k, epoch, w, world.config['multicore'])
-#             else:
-#                 Procedure.Test_small(dataset, Recmodel, world.top_k, epoch, w)
 finally:
     if world.tensorboard:
         w.close()

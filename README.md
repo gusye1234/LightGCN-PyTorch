@@ -18,7 +18,7 @@ In this work, we aim to simplify the design of GCN to make it more concise and a
 
 ## Enviroment Requirement
 
-`pip install requirements.txt`
+`pip install -r requirements.txt`
 
 
 
@@ -28,37 +28,39 @@ We provide three processed datasets: Gowalla, Yelp2018 and Amazon-book and one s
 
 see more in `dataloader.py`
 
-## usage
+## An example to run a 3-layer LightGCN
+
+run LightGCN on **Gowalla** dataset:
+
+* command
+
+` python main.py --decay=1e-4 --lr=0.001 --layer=3 --dataset="gowalla" --topks=[20] --recdim=64`
+
+* log output
 
 ```shell
-Go lightGCN
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --bpr_batch BPR_BATCH
-                        the batch size for bpr loss training procedure
-  --recdim RECDIM       the embedding size of lightGCN
-  --layer LAYER         the layer num of lightGCN
-  --lr LR               the learning rate
-  --decay DECAY         the weight decay for l2 normalizaton
-  --dropout DROPOUT     using the dropout or not
-  --keepprob KEEPPROB   the batch size for bpr loss training procedure
-  --a_fold A_FOLD       the fold num used to split large adj matrix, like
-                        gowalla
-  --testbatch TESTBATCH
-                        the batch size of users for testing
-  --dataset DATASET     available datasets: [lastfm, gowalla]
-  --path PATH           path to save weights
-  --topks [TOPKS]       @k test list
-  --tensorboard TENSORBOARD
-                        enable tensorboard
-  --comment COMMENT
-  --load LOAD
-  --epochs EPOCHS
-  --multicore MULTICORE
-                        whether we use multiprocessing or not in test
-  --pretrain PRETRAIN   whether we use pretrained weight or not
+...
+======================
+EPOCH[5/1000]
+BPR[sample time][16.2=15.84+0.42]
+[saved][[BPR[aver loss1.128e-01]]
+[0;30;43m[TEST][0m
+{'precision': array([0.03315359]), 'recall': array([0.10711388]), 'ndcg': array([0.08940792])}
+[TOTAL TIME] 35.9975962638855
+...
+======================
+EPOCH[116/1000]
+BPR[sample time][16.9=16.60+0.45]
+[saved][[BPR[aver loss2.056e-02]]
+[TOTAL TIME] 30.99874997138977
+...
 ```
+
+*NOTE*:
+
+1. Even though we offer the code to split sparse matrix for matrix multiplication, we strongly suggest you don't enable it since it will extremely slow down the training speed.
+2. If you feel the test process is slow, try to increase the ` testbatch` and enable `multicore`(Windows system may encounter problems with `multicore` enabled)
+
 
 ## notes:
 
@@ -81,9 +83,10 @@ if you want to run lightGCN on your own dataset, you should go to `dataloader.py
 
 gowalla:
 
-|             | Recall in paper | Recall in `torch` |
-| ----------- | --------------- | ----------------- |
-| **layer=1** | 0.1726          | 0.1692            |
-| **layer=2** | 0.1786          | 0.1783            |
-| **layer=3** | 0.1809          | 0.1807            |
+|             | Recall in paper | Recall in `torch` |  ndcg in paper    | ndcg in `torch` |
+| ----------- | ---------------------------- | ----------------- | ---- | ---- |
+| **layer=1** | 0.1726                       | 0.1692            |      |      |
+| **layer=2** | 0.1786                       | 0.1783            |      |      |
+| **layer=3** | 0.1809                       | 0.1826            |      |      |
+| **layer=4** | 0.1817                       | 0.1826            |      |      |
 
