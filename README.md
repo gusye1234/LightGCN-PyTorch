@@ -60,6 +60,8 @@ BPR[sample time][16.9=16.60+0.45]
 
 1. Even though we offer the code to split sparse matrix for matrix multiplication, we strongly suggest you don't enable it since it will extremely slow down the training speed.
 2. If you feel the test process is slow, try to increase the ` testbatch` and enable `multicore`(Windows system may encounter problems with `multicore` enabled)
+3. Use `tensorboard` option, it's good.
+4. Since we fix the seed of `numpy` and `torch` in the beginning, if you run the command as we do above, you should have the exact output log despite the running time (check your output of *epoch 5* and *epoch 116*).
 
 
 ## notes:
@@ -80,6 +82,10 @@ code
 if you want to run lightGCN on your own dataset, you should go to `dataloader.py`, and implement a dataloader.
 
 ## Results
+*tensorflow* version results:
+![](imgs/tf.jpg)
+
+*pytorch* version results
 
 gowalla:
 
@@ -89,4 +95,6 @@ gowalla:
 | **layer=2** | 0.1786                       | 0.1783            |      |      |
 | **layer=3** | 0.1809                       | 0.1826            |      |      |
 | **layer=4** | 0.1817                       | 0.1826            |      |      |
+
+
 
