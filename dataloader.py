@@ -188,7 +188,7 @@ class Loader(BasicDataset):
 
     def __init__(self,config = world.config,path="./data/gowalla"):
         # train or test
-        cprint('loading [gowalla]')
+        cprint(f'loading [{path}]')
         self.split = config['A_split']
         self.folds = config['A_n_fold']
         self.mode_dict = {'train': 0, "test": 1}
@@ -233,10 +233,10 @@ class Loader(BasicDataset):
                     self.testDataSize += len(items)
         self.m_items += 1
         self.n_users += 1
-        self.testUniqueUsers = np.array(testUser)
+        self.testUniqueUsers = np.array(testUniqueUsers)
         self.testUser = np.array(testUser)
         self.testItem = np.array(testItem)
-
+        
         self.Graph = None
         print(f"{self.trainDataSize} interactions for training")
         print(f"gowalla Sparsity : {(self.trainDataSize + self.testDataSize) / self.n_users / self.m_items}")
