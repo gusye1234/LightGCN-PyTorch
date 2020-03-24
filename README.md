@@ -44,7 +44,7 @@ run LightGCN on **Gowalla** dataset:
 EPOCH[5/1000]
 BPR[sample time][16.2=15.84+0.42]
 [saved][[BPR[aver loss1.128e-01]]
-[0;30;43m[TEST][0m
+[0;30;43m[TEST][0m
 {'precision': array([0.03315359]), 'recall': array([0.10711388]), 'ndcg': array([0.08940792])}
 [TOTAL TIME] 35.9975962638855
 ...
@@ -82,19 +82,19 @@ code
 if you want to run lightGCN on your own dataset, you should go to `dataloader.py`, and implement a dataloader.
 
 ## Results
-*tensorflow* version results:
+***tensorflow* version results**:
 ![](imgs/tf.jpg)
 
-*pytorch* version results
+***pytorch* version results** (stop at 1000 epochs):
 
-gowalla:
+* gowalla:
 
-|             | Recall in paper | Recall in `torch` |  ndcg in paper    | ndcg in `torch` |
-| ----------- | ---------------------------- | ----------------- | ---- | ---- |
-| **layer=1** | 0.1726                       | 0.1692            |      |      |
-| **layer=2** | 0.1786                       | 0.1783            |      |      |
-| **layer=3** | 0.1809                       | 0.1826            |      |      |
-| **layer=4** | 0.1817                       | 0.1826            |      |      |
+|             | Recall | ndcg | precision |
+| ----------- | ---------------------------- | ----------------- | ---- |
+| **layer=1** | 0.1687               | 0.1417    | 0.05085 |
+| **layer=2** | 0.1789                      | 0.1526       | 0.05478 |
+| **layer=3** | 0.1809                       | 0.1826            |  |
+| **layer=4** | 0.1817                       | 0.1826            |  |
 
 
 
