@@ -11,12 +11,11 @@ import time
 from tqdm import tqdm
 import Procedure
 
-seed = 2020
-np.random.seed(seed)   
+np.random.seed(world.seed)   
 if torch.cuda.is_available():
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-torch.manual_seed(seed)
+    torch.cuda.manual_seed(world.seed)
+    torch.cuda.manual_seed_all(world.seed)
+torch.manual_seed(world.seed)
 
 if world.dataset in ['gowalla', 'yelp2018']:
     dataset = dataloader.Loader(path="./data/"+world.dataset)

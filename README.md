@@ -34,7 +34,7 @@ run LightGCN on **Gowalla** dataset:
 
 * command
 
-` python main.py --decay=1e-4 --lr=0.001 --layer=3 --dataset="gowalla" --topks=[20] --recdim=64`
+` python main.py --decay=1e-4 --lr=0.001 --layer=3 --seed-2020 --dataset="gowalla" --topks=[20] --recdim=64`
 
 * log output
 
@@ -58,10 +58,10 @@ BPR[sample time][16.9=16.60+0.45]
 
 *NOTE*:
 
-1. Even though we offer the code to split sparse matrix for matrix multiplication, we strongly suggest you don't enable it since it will extremely slow down the training speed.
-2. If you feel the test process is slow, try to increase the ` testbatch` and enable `multicore`(Windows system may encounter problems with `multicore` enabled)
+1. Even though we offer the code to split user-item matrix for matrix multiplication, we strongly suggest you don't enable it since it will extremely slow down the training speed.
+2. If you feel the test process is slow, try to increase the ` testbatch` and enable `multicore`(Windows system may encounter problems with `multicore` option enabled)
 3. Use `tensorboard` option, it's good.
-4. Since we fix the seed of `numpy` and `torch` in the beginning, if you run the command as we do above, you should have the exact output log despite the running time (check your output of *epoch 5* and *epoch 116*).
+4. Since we fix the seed(`--seed=2020` ) of `numpy` and `torch` in the beginning, if you run the command as we do above, you should have the exact output log despite the running time (check your output of *epoch 5* and *epoch 116*).
 
 
 ## notes:
@@ -82,19 +82,36 @@ code
 if you want to run lightGCN on your own dataset, you should go to `dataloader.py`, and implement a dataloader.
 
 ## Results
+*all metrics is under top-20*
+
 ***tensorflow* version results**:
 ![](imgs/tf.jpg)
 
 ***pytorch* version results** (stop at 1000 epochs):
 
+(*for seed=2020*)
+
+![](./imgs/torch.png)
+
 * gowalla:
 
 |             | Recall | ndcg | precision |
 | ----------- | ---------------------------- | ----------------- | ---- |
-| **layer=1** | 0.1687               | 0.1417    | 0.05085 |
-| **layer=2** | 0.1789                      | 0.1526       | 0.05478 |
-| **layer=3** | 0.1809                       | 0.1826            |  |
-| **layer=4** | 0.1817                       | 0.1826            |  |
+| **layer=1** | 0.1687               | 0.1417    | 0.05106 |
+| **layer=2** | 0.1786                     | 0.1524    | 0.05456 |
+| **layer=3** | 0.1824                | 0.1547 | 0.05589 |
+| **layer=4** | 0.1825                 | 0.1537       | 0.05576 |
+*NOTE*: layers=4 we use *seed=1000* to attain a better performance
+
+* yelp2018
+|             | Recall | ndcg | precision |
+| ----------- | ---------------------------- | ----------------- | ---- |
+| **layer=1** | 0.05604     | 0.4557 | 0.02519 |
+| **layer=2** | 0.05988               | 0.04956 | 0.0271 |
+| **layer=3** | 0.06347          | 0.05238 | 0.0285 |
+| **layer=4** | 0.06515                | 0.05325 | 0.02917 |
+
+
 
 
 

@@ -38,6 +38,7 @@ if args.pretrain == 1:
 GPU = torch.cuda.is_available()
 device = torch.device('cuda' if GPU else "cpu")
 CORES = multiprocessing.cpu_count() // 2
+seed = args.seed
 
 #device = torch.device("cpu")
 
