@@ -4,6 +4,7 @@ import dataloader
 import utils
 from world import cprint
 import torch
+import numpy as np
 from model import LightGCN
 from pprint import pprint
 from tensorboardX import SummaryWriter
@@ -18,7 +19,7 @@ if torch.cuda.is_available():
 torch.manual_seed(world.seed)
 
 if world.dataset in ['gowalla', 'yelp2018']:
-    dataset = dataloader.Loader(path="./data/"+world.dataset)
+    dataset = dataloader.Loader(path="../data/"+world.dataset)
 elif world.dataset == 'lastfm':
     dataset = dataloader.LastFM()
     
@@ -39,7 +40,7 @@ Recmodel = LightGCN(world.config, dataset)
 Recmodel = Recmodel.to(world.device)
 bpr = utils.BPRLoss(Recmodel, world.config)
 if world.LOAD:
-    load_path = os.path.join(world.PATH,"Rec-lgn.pth.tar")
+    load_path = os.path.join(world.PATH,f"{world.dataset}-{world.config['lightGCN_n_layers']}.pth.tar")
     Recmodel.load_state_dict(torch.load(load_path))
     world.cprint(f"loaded model weights from {load_path}") 
 Neg_k = 1
@@ -60,7 +61,7 @@ try:
         output_information = Procedure.BPR_train_original(dataset, Recmodel, bpr, epoch, neg_k=Neg_k,w=w)
         
         print(f'[saved][{output_information}]')
-        torch.save(Recmodel.state_dict(), os.path.join(world.PATH,"Rec-lgn.pth.tar"))
+        torch.save(Recmodel.state_dict(), os.path.join(world.PATH,f"{world.dataset}-{world.config['lightGCN_n_layers']}.pth.tar"))
         if epoch %10 == 0 and epoch != 0:
             cprint("[TEST]")
             testDict = dataset.getTestDict()

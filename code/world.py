@@ -15,7 +15,6 @@ import numpy as np
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 args = parse_args()
-print(args)
 config = {}
 all_dataset = ['lastfm', 'gowalla', 'yelp2018']
 # config['batch_size'] = 4096

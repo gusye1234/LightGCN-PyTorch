@@ -1,7 +1,5 @@
 ## pytorch-light-GCN
 
-*still testing*
-
 This is our Pytorch implementation for the paper:
 
 >Xiangnan He, Kuan Deng ,Xiang Wang, Yan Li, Yongdong Zhang, Meng Wang(2020). LightGCN: Simplifying and Powering Graph Convolution Network for Recommendation, [Paper in arXiv](https://arxiv.org/abs/2002.02126).
@@ -34,7 +32,7 @@ run LightGCN on **Gowalla** dataset:
 
 * command
 
-` python main.py --decay=1e-4 --lr=0.001 --layer=3 --seed-2020 --dataset="gowalla" --topks=[20] --recdim=64`
+` cd code && python main.py --decay=1e-4 --lr=0.001 --layer=3 --seed-2020 --dataset="gowalla" --topks=[20] --recdim=64`
 
 * log output
 

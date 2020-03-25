@@ -54,7 +54,7 @@ class LastFM(BasicDataset):
     Incldue graph information
     LastFM dataset
     """
-    def __init__(self, path="./data/lastfm"):
+    def __init__(self, path="../data/lastfm"):
         # train or test
         cprint("loading [last fm]")
         self.mode_dict = {'train':0, "test":1}
@@ -186,7 +186,7 @@ class Loader(BasicDataset):
     gowalla dataset
     """
 
-    def __init__(self,config = world.config,path="./data/gowalla"):
+    def __init__(self,config = world.config,path="../data/gowalla"):
         # train or test
         cprint(f'loading [{path}]')
         self.split = config['A_split']
