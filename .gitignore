@@ -7,7 +7,6 @@
 *.pyc
 .DS_Store
 *.cfg
-*.png
 *.sqlite3
 checkpoints/
 runs/

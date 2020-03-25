@@ -99,9 +99,11 @@ if you want to run lightGCN on your own dataset, you should go to `dataloader.py
 | **layer=2** | 0.1786                     | 0.1524    | 0.05456 |
 | **layer=3** | 0.1824                | 0.1547 | 0.05589 |
 | **layer=4** | 0.1825                 | 0.1537       | 0.05576 |
+
 *NOTE*: layers=4 we use *seed=1000* to attain a better performance
 
 * yelp2018
+
 |             | Recall | ndcg | precision |
 | ----------- | ---------------------------- | ----------------- | ---- |
 | **layer=1** | 0.05604     | 0.4557 | 0.02519 |
