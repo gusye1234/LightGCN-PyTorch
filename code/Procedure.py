@@ -99,7 +99,7 @@ def test_one_batch(X):
         ret = utils.RecallPrecision_ATk(groundTrue, r, k)
         pre.append(ret['precision'])
         recall.append(ret['recall'])
-        ndcg.append(utils.NDCGatK_test_r(groundTrue,r,k))
+        ndcg.append(utils.NDCGatK_r(groundTrue,r,k))
     return {'recall':np.array(recall), 
             'precision':np.array(pre), 
             'ndcg':np.array(ndcg)}

@@ -29,113 +29,27 @@ class BPRLoss:
     def stageOne(self, users, pos, neg):
         users_emb,pos_emb, neg_emb, userEmb0, posEmb0, negEmb0 = self.model.getEmbedding(users, pos, neg)
         # print(users_emb.dtype,pos_emb.dtype, neg_emb.dtype)
-        reg_loss = (1/2)*self.weight_decay*(torch.norm(userEmb0, 2).pow(2) +
-                                            torch.norm(posEmb0, 2).pow(2) + 
-                                            torch.norm(negEmb0, 2).pow(2))
+        reg_loss = (1/2)*self.weight_decay*(torch.norm(userEmb0, 2).pow(2) + torch.norm(posEmb0, 2).pow(2) + torch.norm(negEmb0, 2).pow(2))
         reg_loss = reg_loss/float(len(userEmb0))
-        
-        
+
         pos_scores = torch.mul(users_emb, pos_emb)
         pos_scores = torch.sum(pos_scores, dim=1)
         # print('pos:', pos_scores[:5])
         neg_scores = torch.mul(users_emb, neg_emb)
         neg_scores = torch.sum(neg_scores, dim=1)
         # print('neg:', neg_scores[:5])
-        '''
-        bpr  = self.f(pos_scores - neg_scores)
-        bpr  = -torch.log(bpr)
-        loss = torch.mean(bpr)
-        '''
+        
         loss = torch.mean(torch.nn.functional.softplus(neg_scores - pos_scores))
-        #loss = loss + reg_loss
-
+        # bpr  = self.f(pos_scores - neg_scores)
+        # bpr  = -torch.log(bpr)
+        # loss = torch.mean(bpr)
+        loss = loss + reg_loss
+        
         self.opt.zero_grad()
         loss.backward()
         self.opt.step()
-        return loss.cpu().item(), reg_loss.cpu().item()
-
-
-
-def __UniformSample(users, dataset, k=1):
-    """
-    uniformsample k negative items and one positive item for one user
-    return:
-        np.array
-    """
-    dataset : BasicDataset
-    allPos   = dataset.getUserPosItems(users)
-    allNeg   = dataset.getUserNegItems(users)
-    # allItems = list(range(dataset.m_items))
-    S = []
-    sample_time1 = 0.
-    sample_time2 = 0.
-    total_start = time()
-    for i, user in enumerate(users):
-        start = time()
-        posForUser = allPos[i]
-        # negForUser = dataset.getUserNegItems([user])[0]
-        negForUser = allNeg[i]
-        sample_time2 += time()-start
         
-        start = time()
-        onePos_index = np.random.randint(0, len(posForUser))
-        onePos     = posForUser[onePos_index:onePos_index+1]
-        # onePos     = np.random.choice(posForUser, size=(1, ))
-        kNeg_index = np.random.randint(0, len(negForUser), size=(k, ))
-        kNeg       = negForUser[kNeg_index]
-        end = time()
-        sample_time1 += end-start
-        S.append(np.hstack([onePos, kNeg]))
-    total = time() - total_start
-    return np.array(S), [total, sample_time1, sample_time2]
-        
-
-def UniformSample_allpos_largeDataset(users, dataset, k=4):
-    """
-    uniformsample k negative items and one positive item for one user
-    return:
-        np.array
-    """
-    dataset : BasicDataset
-    allPos   = dataset.getUserPosItems(users)
-    # allNeg   = dataset.getUserNegItems(users)
-    # allItems = list(range(dataset.m_items))
-    S = []
-    sample_time1 = 0.
-    sample_time2 = 0.
-    total_start = time()
-    for i, user in enumerate(users):
-        start = time()
-        posForUser = allPos[i]
-        # negForUser = dataset.getUserNegItems([user])[0]
-        negForUser_len = dataset.m_items - len(posForUser)
-        sample_time2 += time()-start
-        
-        for positem in posForUser:
-            start = time()
-            # onePos_index = np.random.randint(0, len(posForUser))
-            # onePos     = posForUser[onePos_index:onePos_index+1]
-            # onePos     = np.random.choice(posForUser, size=(1, ))
-            # kNeg_index = np.random.randint(0, len(negForUser), size=(k, ))
-            # kNeg       = negForUser[kNeg_index]
-            kNeg = []
-            neg_i = 0
-            while True:
-                if neg_i == k:
-                    break
-                neg = np.random.randint(0, negForUser_len)
-                if neg in posForUser:
-                    continue
-                else:
-                    kNeg.append(neg)
-                    neg_i += 1
-            end = time()
-            sample_time1 += end-start
-            for negitemForpos in kNeg:
-                S.append([user, positem, negitemForpos])
-            # S.append(np.hstack([onePos, kNeg]))
-    total = time() - total_start
-    return np.array(S), [total, sample_time1, sample_time2]
+        return loss.cpu().item()
 
 def UniformSample_original(users, dataset):
     """
@@ -171,71 +85,8 @@ def UniformSample_original(users, dataset):
     total = time() - total_start
     return np.array(S), [total, sample_time1, sample_time2]
 
-
-
-def UniformSample_allpos(users, dataset, k=4):
-    """
-    uniformsample k negative items and one positive item for one user
-    return:
-        np.array
-    """
-    dataset : BasicDataset
-    allPos   = dataset.getUserPosItems(users)
-    allNeg   = dataset.getUserNegItems(users)
-    # allItems = list(range(dataset.m_items))
-    S = []
-    sample_time1 = 0.
-    sample_time2 = 0.
-    total_start = time()
-    for i, user in enumerate(users):
-        start = time()
-        posForUser = allPos[i]
-        # negForUser = dataset.getUserNegItems([user])[0]
-        negForUser = allNeg[i]
-        sample_time2 += time()-start
-        
-        for positem in posForUser:
-            start = time()
-            # onePos_index = np.random.randint(0, len(posForUser))
-            # onePos     = posForUser[onePos_index:onePos_index+1]
-            # onePos     = np.random.choice(posForUser, size=(1, ))
-            kNeg_index = np.random.randint(0, len(negForUser), size=(k, ))
-            kNeg       = negForUser[kNeg_index]
-            end = time()
-            sample_time1 += end-start
-            for negitemForpos in kNeg:
-                S.append([user, positem, negitemForpos])
-            # S.append(np.hstack([onePos, kNeg]))
-    total = time() - total_start
-    return np.array(S), [total, sample_time1, sample_time2]
-        
-
-def getAllData(dataset, gamma=None):
-    """
-    return all data (n_users X m_items)
-    return:
-        [u, i, x_ui]
-    """
-    # if gamma is not None:
-    #     print(gamma.size())
-    dataset : BasicDataset
-    users = []
-    items = []
-    xijs   = None
-    allPos = dataset.allPos
-    allxijs = np.array(dataset.UserItemNet.todense()).reshape(-1)
-    items = np.tile(np.arange(dataset.m_items), (1, dataset.n_users)).squeeze()
-    users = np.tile(np.arange(dataset.n_users), (dataset.m_items,1)).T.reshape(-1)
-    print(len(allxijs), len(items), len(users))
-    assert len(allxijs) == len(items) == len(users)
-    # for user in range(dataset.n_users):
-    #     users.extend([user]*dataset.m_items)
-    #     items.extend(range(dataset.m_items))
-    if gamma is not None:
-        return torch.Tensor(users).long(), torch.Tensor(items).long(), torch.from_numpy(allxijs).long(), gamma.reshape(-1)
-    return torch.Tensor(users).long(), torch.Tensor(items).long(), torch.from_numpy(allxijs).long()
 # ===================end samplers==========================
-# =========================================================
+# =====================utils====================================
 
 
 def minibatch(*tensors, **kwargs):
@@ -298,25 +149,7 @@ def MRRatK_r(r, k):
     pred_data = pred_data.sum(1)
     return np.sum(pred_data)
 
-
-def NDCGatK_r(r, k):
-    """
-    Normalized Discounted Cumulative Gain
-    rel_i = 1 or 0, so 2^{rel_i} - 1 = 1 or 0
-    """
-    pred_data = r[:, :k]
-    max_r = np.sort(r, axis=1)[:, ::-1]
-    max_r = max_r[:, :k]
-    # max_r = np.sort(pred_data, axis=1)[:, ::-1]
-    idcg = np.sum(max_r * 1./np.log2(np.arange(2, k + 2)), axis=1)
-    dcg = pred_data*(1./np.log2(np.arange(2, k + 2)))
-    dcg = np.sum(dcg, axis=1)
-    idcg[idcg == 0.] = 1.
-    ndcg = dcg/idcg
-    ndcg[np.isnan(ndcg)] = 0.
-    return np.sum(ndcg)
-
-def NDCGatK_test_r(test_data,r,k):
+def NDCGatK_r(test_data,r,k):
     """
     Normalized Discounted Cumulative Gain
     rel_i = 1 or 0, so 2^{rel_i} - 1 = 1 or 0
@@ -351,4 +184,3 @@ def getLabel(test_data, pred_data):
 
 # ====================end Metrics=============================
 # =========================================================
-
