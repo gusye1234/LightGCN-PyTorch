@@ -66,7 +66,7 @@ try:
         if epoch %10 == 0 and epoch != 0:
             cprint("[TEST]")
             testDict = dataset.getTestDict()
-            Procedure.Test(dataset, Recmodel, world.top_k, epoch, w, world.config['multicore'])
+            Procedure.Test(dataset, Recmodel, epoch, w, world.config['multicore'])
         print(f"[TOTAL TIME] {time.time() - start}")
 finally:
     if world.tensorboard:
