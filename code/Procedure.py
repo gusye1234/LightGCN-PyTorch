@@ -85,7 +85,7 @@ def BPR_train_original(dataset, recommend_model, loss_class, epoch, neg_k=1, w=N
     
     
 def test_one_batch(X):
-    sorted_items = X[0].numpy().astype('int')
+    sorted_items = X[0].numpy()
     groundTrue = X[1]
     r = utils.getLabel(groundTrue, sorted_items)
     pre, recall, ndcg = [], [], []
@@ -155,9 +155,9 @@ def Test(dataset, Recmodel, top_k, epoch, w=None, multicore=0):
             results['recall'] += result['recall']
             results['precision'] += result['precision']
             results['ndcg'] += result['ndcg']
-        results['recall'] /= len(users)
-        results['precision'] /= len(users)
-        results['ndcg'] /= len(users)
+        results['recall'] /= float(len(users))
+        results['precision'] /= float(len(users))
+        results['ndcg'] /= float(len(users))
         if world.tensorboard:
             w.add_scalars(f'Test/Recall@{world.topks}',
                           {str(world.topks[i]): results['recall'][i] for i in range(len(world.topks))}, epoch)
@@ -169,39 +169,3 @@ def Test(dataset, Recmodel, top_k, epoch, w=None, multicore=0):
             pool.close()
         print(results)
         return results
-    
-    
-
-def Test_small(dataset, Recmodel, top_k, epoch, w=None):
-    dataset : utils.BasicDataset
-    testDict : dict = dataset.getTestDict()
-    Recmodel : model.RecMF
-    with torch.no_grad():
-        Recmodel.eval()
-        users = torch.Tensor(list(testDict.keys()))
-        GroundTrue = [testDict[user] for user in users.numpy()]
-        rating = Recmodel.getUsersRating(users)
-        # exclude positive train data
-        allPos = dataset.getUserPosItems(users)
-        exclude_index = []
-        exclude_items = []
-        for range_i, items in enumerate(allPos):
-            exclude_index.extend([range_i]*len(items))
-            exclude_items.extend(items)
-        rating[exclude_index, exclude_items] = 0.
-        # assert torch.all(rating >= 0.)
-        # assert torch.all(rating <= 1.)
-        # end excluding
-        _, top_items = torch.topk(rating, top_k)
-        top_items = top_items.cpu().numpy()
-        metrics = utils.recall_precisionATk(GroundTrue, top_items, top_k)
-        metrics['mrr'] = utils.MRRatK(GroundTrue, top_items, top_k)
-        metrics['ndcg'] = utils.NDCGatK(GroundTrue, top_items, top_k)
-        # pprint(metrics)
-        if world.tensorboard:
-            w.add_scalar(f'Test/Recall@{top_k}', metrics['recall'], epoch)
-            w.add_scalar(f'Test/Precision@{top_k}', metrics['precision'], epoch)
-            w.add_scalar(f'Test/MRR@{top_k}', metrics['mrr'], epoch)
-            w.add_scalar(f'Test/NDCG@{top_k}', metrics['ndcg'], epoch)
-        print(metrics)
-            

@@ -239,7 +239,7 @@ class Loader(BasicDataset):
         
         self.Graph = None
         print(f"{self.trainDataSize} interactions for training")
-        print(f"gowalla Sparsity : {(self.trainDataSize + self.testDataSize) / self.n_users / self.m_items}")
+        print(f"{world.dataset} Sparsity : {(self.trainDataSize + self.testDataSize) / self.n_users / self.m_items}")
 
         # (users,items), bipartite graph
         self.UserItemNet = csr_matrix((np.ones(len(self.trainUser)), (self.trainUser, self.trainItem)),
@@ -251,7 +251,7 @@ class Loader(BasicDataset):
         # pre-calculate
         self.allPos = self.getUserPosItems(list(range(self.n_users)))
         self.__testDict = self.__build_test()
-        print("gowalla is ready to go")
+        print(f"{world.dataset} is ready to go")
 
     def _split_A_hat(self,A):
         A_fold = []
@@ -274,12 +274,14 @@ class Loader(BasicDataset):
         return torch.sparse.FloatTensor(index, data, torch.Size(coo.shape))
         
     def getSparseGraph(self):
+        print("loading adjacency matrix")
         if self.Graph is None:
             try:
                 pre_adj_mat = sp.load_npz(self.path + '/s_pre_adj_mat.npz')
                 print("successfully loaded...")
                 norm_adj = pre_adj_mat
             except :
+                print("generating adjacency matrix")
                 s = time()
                 adj_mat = sp.dok_matrix((self.n_users + self.m_items, self.n_users + self.m_items), dtype=np.float32)
                 adj_mat = adj_mat.tolil()

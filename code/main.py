@@ -33,6 +33,7 @@ print("comment:", world.comment)
 print("tensorboard:", world.tensorboard)
 print("LOAD:", world.LOAD)
 print("Weight path:", world.PATH)
+print("Test Topks:", world.topks)
 print("using bpr loss")
 print('===========end===================')
 
@@ -41,7 +42,7 @@ Recmodel = Recmodel.to(world.device)
 bpr = utils.BPRLoss(Recmodel, world.config)
 if world.LOAD:
     load_path = os.path.join(world.PATH,f"{world.dataset}-{world.config['lightGCN_n_layers']}.pth.tar")
-    Recmodel.load_state_dict(torch.load(load_path))
+    Recmodel.load_state_dict(torch.load(load_path,map_location=torch.device('cpu')))
     world.cprint(f"loaded model weights from {load_path}") 
 Neg_k = 1
 
