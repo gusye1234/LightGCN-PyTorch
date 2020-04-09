@@ -113,5 +113,5 @@ if you want to run lightGCN on your own dataset, you should go to `dataloader.py
 
 
 
-
+For those who want the well-trained models, please e-mail me ( `gusye AT mail.ustc.edu.cn`)
 
