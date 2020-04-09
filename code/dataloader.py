@@ -28,8 +28,10 @@ class BasicDataset(Dataset):
         
     def getUserItemFeedback(self, users, items):
         raise NotImplementedError
+    
     def getUserPosItems(self, users):
         raise NotImplementedError
+    
     def getUserNegItems(self, users):
         """
         not necessary for large dataset

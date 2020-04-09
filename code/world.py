@@ -17,6 +17,7 @@ args = parse_args()
 
 config = {}
 all_dataset = ['lastfm', 'gowalla', 'yelp2018', 'amazon']
+all_models  = ['mf', 'lgn']
 # config['batch_size'] = 4096
 config['bpr_batch_size'] = args.bpr_batch
 config['latent_dim_rec'] = args.recdim
@@ -29,23 +30,21 @@ config['multicore'] = args.multicore
 config['lr'] = args.lr
 config['decay'] = args.decay
 config['pretrain'] = args.pretrain
+config['A_split'] = False
+config['bigdata'] = False
 
 GPU = torch.cuda.is_available()
 device = torch.device('cuda' if GPU else "cpu")
 CORES = multiprocessing.cpu_count() // 2
 seed = args.seed
-#device = torch.device("cpu")
 
 dataset = args.dataset
+model_name = args.model
 if dataset not in all_dataset:
     raise NotImplementedError(f"Haven't supported {dataset} yet!, try {all_dataset}")
+if model_name not in all_models:
+    raise NotImplementedError(f"Haven't supported {model_name} yet!, try {all_models}")
 
-if dataset in ['gowalla', 'yelp2018', 'amazon']:
-    config['A_split'] = False
-    config['bigdata'] = False
-else:
-    config['A_split'] = False
-    config['bigdata'] = False
 
 
 

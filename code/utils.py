@@ -13,36 +13,22 @@ from torch import log
 from dataloader import BasicDataset
 from time import time
 from model import LightGCN
+from model import PairWiseModel
 import random
-
+import os
         
 class BPRLoss:
-    def __init__(self, recmodel,config):
-        recmodel : LightGCN
+    def __init__(self, 
+                 recmodel : PairWiseModel, 
+                 config : dict):
         self.model = recmodel
-        self.f = nn.Sigmoid()
         self.weight_decay = config['decay']
         self.lr = config['lr']
         self.opt = optim.Adam(recmodel.parameters(), lr=self.lr)
         
-        
     def stageOne(self, users, pos, neg):
-        users_emb,pos_emb, neg_emb, userEmb0, posEmb0, negEmb0 = self.model.getEmbedding(users, pos, neg)
-        # print(users_emb.dtype,pos_emb.dtype, neg_emb.dtype)
-        reg_loss = (1/2)*self.weight_decay*(torch.norm(userEmb0, 2).pow(2) + torch.norm(posEmb0, 2).pow(2) + torch.norm(negEmb0, 2).pow(2))
-        reg_loss = reg_loss/float(len(userEmb0))
-
-        pos_scores = torch.mul(users_emb, pos_emb)
-        pos_scores = torch.sum(pos_scores, dim=1)
-        # print('pos:', pos_scores[:5])
-        neg_scores = torch.mul(users_emb, neg_emb)
-        neg_scores = torch.sum(neg_scores, dim=1)
-        # print('neg:', neg_scores[:5])
-        
-        loss = torch.mean(torch.nn.functional.softplus(neg_scores - pos_scores))
-        # bpr  = self.f(pos_scores - neg_scores)
-        # bpr  = -torch.log(bpr)
-        # loss = torch.mean(bpr)
+        loss, reg_loss = self.model.bpr_loss(users, pos, neg)
+        reg_loss = reg_loss*self.weight_decay
         loss = loss + reg_loss
         
         self.opt.zero_grad()
@@ -88,6 +74,19 @@ def UniformSample_original(users, dataset):
 # ===================end samplers==========================
 # =====================utils====================================
 
+def set_seed(seed):
+    np.random.seed(seed)   
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    torch.manual_seed(seed)
+
+def getFileName():
+    if world.model_name == 'mf':
+        file = f"mf-{world.dataset}-{world.config['latent_dim_rec']}.pth.tar"
+    elif world.model_name == 'lgn':
+        file = f"lgn-{world.dataset}-{world.config['lightGCN_n_layers']}-{world.config['latent_dim_rec']}.pth.tar"
+    return os.path.join(world.PATH,file)
 
 def minibatch(*tensors, **kwargs):
 
