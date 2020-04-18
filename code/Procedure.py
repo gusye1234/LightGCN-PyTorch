@@ -102,7 +102,7 @@ def test_one_batch(X):
 def Test(dataset, Recmodel, epoch, w=None, multicore=0):
     u_batch_size = world.config['test_u_batch_size']
     dataset: utils.BasicDataset
-    testDict: dict = dataset.getTestDict()
+    testDict: dict = dataset.testDict
     Recmodel: model.LightGCN
     # eval mode with no dropout
     Recmodel = Recmodel.eval()

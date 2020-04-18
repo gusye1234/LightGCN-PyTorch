@@ -47,7 +47,6 @@ try:
         torch.save(Recmodel.state_dict(), weight_file)
         if epoch %10 == 0 and epoch != 0:
             cprint("[TEST]")
-            testDict = dataset.getTestDict()
             Procedure.Test(dataset, Recmodel, epoch, w, world.config['multicore'])
         print(f"[TOTAL TIME] {time.time() - start}")
 finally:
