@@ -10,7 +10,7 @@ import Procedure
 
 # ==============================
 utils.set_seed(world.seed)
-
+print(">>SEED:", world.seed)
 # ==============================
 import register
 from register import dataset
