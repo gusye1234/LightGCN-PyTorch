@@ -7,7 +7,7 @@ import numpy as np
 from tensorboardX import SummaryWriter
 import time
 import Procedure
-
+from os.path import join
 # ==============================
 utils.set_seed(world.seed)
 print(">>SEED:", world.seed)
@@ -31,7 +31,9 @@ Neg_k = 1
 
 # init tensorboard
 if world.tensorboard:
-    w : SummaryWriter = SummaryWriter("./runs/"+time.strftime("%m-%d-%Hh%Mm%Ss-") + "-" + world.comment)
+    w : SummaryWriter = SummaryWriter(
+                                    join(world.BOARD_PATH, time.strftime("%m-%d-%Hh%Mm%Ss-") + "-" + world.comment)
+                                    )
 else:
     w = None
     world.cprint("not enable tensorflowboard")
@@ -41,13 +43,13 @@ try:
         print('======================')
         print(f'EPOCH[{epoch}/{world.TRAIN_epochs}]')
         start = time.time()
+        if epoch %10 == 0:
+            cprint("[TEST]")
+            Procedure.Test(dataset, Recmodel, epoch, w, world.config['multicore'])
         output_information = Procedure.BPR_train_original(dataset, Recmodel, bpr, epoch, neg_k=Neg_k,w=w)
         
         print(f'[saved][{output_information}]')
         torch.save(Recmodel.state_dict(), weight_file)
-        if epoch %10 == 0 and epoch != 0:
-            cprint("[TEST]")
-            Procedure.Test(dataset, Recmodel, epoch, w, world.config['multicore'])
         print(f"[TOTAL TIME] {time.time() - start}")
 finally:
     if world.tensorboard:

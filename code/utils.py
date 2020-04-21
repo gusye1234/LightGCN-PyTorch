@@ -14,6 +14,7 @@ from dataloader import BasicDataset
 from time import time
 from model import LightGCN
 from model import PairWiseModel
+from sklearn.metrics import roc_auc_score
 import random
 import os
         
@@ -86,7 +87,7 @@ def getFileName():
         file = f"mf-{world.dataset}-{world.config['latent_dim_rec']}.pth.tar"
     elif world.model_name == 'lgn':
         file = f"lgn-{world.dataset}-{world.config['lightGCN_n_layers']}-{world.config['latent_dim_rec']}.pth.tar"
-    return os.path.join(world.PATH,file)
+    return os.path.join(world.FILE_PATH,file)
 
 def minibatch(*tensors, **kwargs):
 
@@ -169,7 +170,16 @@ def NDCGatK_r(test_data,r,k):
     ndcg[np.isnan(ndcg)] = 0.
     return np.sum(ndcg)
 
-
+def AUC(all_item_scores, dataset, test_data):
+    """
+        design for a single user
+    """
+    dataset : BasicDataset
+    r_all = np.zeros((dataset.m_items, ))
+    r_all[test_data] = 1
+    r = r_all[all_item_scores >= 0]
+    test_item_scores = all_item_scores[all_item_scores >= 0]
+    return roc_auc_score(r, test_item_scores)
 
 def getLabel(test_data, pred_data):
     r = []

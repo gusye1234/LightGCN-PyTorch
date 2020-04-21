@@ -7,6 +7,7 @@ Xiangnan He et al. LightGCN: Simplifying and Powering Graph Convolution Network 
 '''
 
 import os
+from os.path import join
 import torch
 from enum import Enum
 from parse import parse_args
@@ -14,6 +15,13 @@ import multiprocessing
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 args = parse_args()
+
+ROOT_PATH = "/Users/gus/Desktop/light-gcn"
+CODE_PATH = join(ROOT_PATH, 'code')
+DATA_PATH = join(ROOT_PATH, 'data')
+BOARD_PATH = join(CODE_PATH, 'runs')
+FILE_PATH = join(CODE_PATH, 'checkpoints')
+
 
 config = {}
 all_dataset = ['lastfm', 'gowalla', 'yelp2018', 'amazon']
