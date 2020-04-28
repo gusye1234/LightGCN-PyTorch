@@ -107,7 +107,7 @@ def Test(dataset, Recmodel, epoch, w=None, multicore=0):
             for range_i, items in enumerate(allPos):
                 exclude_index.extend([range_i] * len(items))
                 exclude_items.extend(items)
-            rating[excxlude_index, exclude_items] = -1e5
+            rating[exclude_index, exclude_items] = -(1<<10)
             _, rating_K = torch.topk(rating, k=max_K)
             rating = rating.cpu().numpy()
             aucs = [ 

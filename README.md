@@ -83,13 +83,13 @@ if you want to run lightGCN on your own dataset, you should go to `dataloader.py
 *all metrics is under top-20*
 
 ***tensorflow* version results**:
-![](imgs/tf.jpg)
+![](https://github.com/gusye1234/pytorch-light-gcn/blob/master/imgs/tf.jpg)
 
 ***pytorch* version results** (stop at 1000 epochs):
 
 (*for seed=2020*)
 
-![](./imgs/torch.png)
+![](https://github.com/gusye1234/pytorch-light-gcn/blob/master/imgs/torch.png)
 
 * gowalla:
 
