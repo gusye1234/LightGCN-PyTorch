@@ -1,4 +1,4 @@
-## pytorch-light-GCN
+## LightGCN-pytorch
 
 This is our Pytorch implementation for the paper:
 
