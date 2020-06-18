@@ -62,22 +62,11 @@ BPR[sample time][16.9=16.60+0.45]
 4. Since we fix the seed(`--seed=2020` ) of `numpy` and `torch` in the beginning, if you run the command as we do above, you should have the exact output log despite the running time (check your output of *epoch 5* and *epoch 116*).
 
 
-## notes:
+## Extend:
+* If you want to run lightGCN on your own dataset, you should go to `dataloader.py`, and implement a dataloader inherited from `BasicDataset`.  Then register it in `register.py`.
+* If you want to run your own models on the datasets we offer, you should go to `model.py`, and implement a model inherited from `BasicModel`.  Then register it in `register.py`.
+* If you want to run your own sampling methods on the datasets and models we offer, you should go to `Procedure.py`, and implement a function. Then modify corresponding in `main.py`
 
-code structure is below.
-
-```shell
-code
-├── parse.py
-├── Procedure.py
-├── dataloader.py
-├── main.py
-├── model.py
-├── utils.py
-└── world.py
-```
-
-if you want to run lightGCN on your own dataset, you should go to `dataloader.py`, and implement a dataloader.
 
 ## Results
 *all metrics is under top-20*
