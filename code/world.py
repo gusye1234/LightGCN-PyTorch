@@ -23,6 +23,10 @@ BOARD_PATH = join(CODE_PATH, 'runs')
 FILE_PATH = join(CODE_PATH, 'checkpoints')
 
 
+if not os.path.exists(FILE_PATH):
+    os.makedirs(FILE_PATH, exist_ok=True)
+
+
 config = {}
 all_dataset = ['lastfm', 'gowalla', 'yelp2018', 'amazon']
 all_models  = ['mf', 'lgn']
