@@ -101,9 +101,13 @@ class LightGCN(BasicModel):
         self.embedding_item = torch.nn.Embedding(
             num_embeddings=self.num_items, embedding_dim=self.latent_dim)
         if self.config['pretrain'] == 0:
-            nn.init.xavier_uniform_(self.embedding_user.weight, gain=1)
-            nn.init.xavier_uniform_(self.embedding_item.weight, gain=1)
-            print('use xavier initilizer')
+#             nn.init.xavier_uniform_(self.embedding_user.weight, gain=1)
+#             nn.init.xavier_uniform_(self.embedding_item.weight, gain=1)
+#             print('use xavier initilizer')
+# random normal init seems to be a better choice when lightGCN actually don't use any non-linear activation function
+            nn.init.normal_(self.embedding_user.weight, std=0.1)
+            nn.init.normal_(self.embedding_item.weight, std=0.1)
+            world.cprint('use NORMAL distribution initilizer')
         else:
             self.embedding_user.weight.data.copy_(torch.from_numpy(self.config['user_emb']))
             self.embedding_item.weight.data.copy_(torch.from_numpy(self.config['item_emb']))
