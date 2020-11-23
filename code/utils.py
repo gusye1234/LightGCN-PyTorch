@@ -52,7 +52,7 @@ class BPRLoss:
 
 def UniformSample_original(dataset, neg_ratio = 1):
     dataset : BasicDataset
-    allPos = dataset
+    allPos = dataset.allPos
     start = time()
     if sample_ext:
         S = sampling.sample_negative(dataset.n_users, dataset.m_items,
