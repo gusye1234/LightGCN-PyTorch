@@ -21,6 +21,8 @@ CODE_PATH = join(ROOT_PATH, 'code')
 DATA_PATH = join(ROOT_PATH, 'data')
 BOARD_PATH = join(CODE_PATH, 'runs')
 FILE_PATH = join(CODE_PATH, 'checkpoints')
+import sys
+sys.path.append(join(CODE_PATH, 'sources'))
 
 
 if not os.path.exists(FILE_PATH):

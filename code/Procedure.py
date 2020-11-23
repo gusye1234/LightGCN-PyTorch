@@ -52,8 +52,9 @@ def BPR_train_original(dataset, recommend_model, loss_class, epoch, neg_k=1, w=N
         if world.tensorboard:
             w.add_scalar(f'BPRLoss/BPR', cri, epoch * int(len(users) / world.config['bpr_batch_size']) + batch_i)
     aver_loss = aver_loss / total_batch
-    
-    return f"loss{aver_loss:.3f}-{timer.dict()}"
+    time_info = timer.dict()
+    timer.zero()
+    return f"loss{aver_loss:.3f}-{timer.zero()}"
     
     
 def test_one_batch(X):
@@ -93,7 +94,7 @@ def Test(dataset, Recmodel, epoch, w=None, multicore=0):
         users_list = []
         rating_list = []
         groundTrue_list = []
-        auc_record = []
+        # auc_record = []
         # ratings = []
         total_batch = len(users) // u_batch_size + 1
         for batch_users in utils.minibatch(users, batch_size=u_batch_size):
@@ -112,12 +113,12 @@ def Test(dataset, Recmodel, epoch, w=None, multicore=0):
             rating[exclude_index, exclude_items] = -(1<<10)
             _, rating_K = torch.topk(rating, k=max_K)
             rating = rating.cpu().numpy()
-            aucs = [ 
-                    utils.AUC(rating[i],
-                              dataset, 
-                              test_data) for i, test_data in enumerate(groundTrue)
-                ]
-            auc_record.extend(aucs)
+            # aucs = [ 
+            #         utils.AUC(rating[i],
+            #                   dataset, 
+            #                   test_data) for i, test_data in enumerate(groundTrue)
+            #     ]
+            # auc_record.extend(aucs)
             del rating
             users_list.append(batch_users)
             rating_list.append(rating_K.cpu())
@@ -138,7 +139,7 @@ def Test(dataset, Recmodel, epoch, w=None, multicore=0):
         results['recall'] /= float(len(users))
         results['precision'] /= float(len(users))
         results['ndcg'] /= float(len(users))
-        results['auc'] = np.mean(auc_record)
+        # results['auc'] = np.mean(auc_record)
         if world.tensorboard:
             w.add_scalars(f'Test/Recall@{world.topks}',
                           {str(world.topks[i]): results['recall'][i] for i in range(len(world.topks))}, epoch)
