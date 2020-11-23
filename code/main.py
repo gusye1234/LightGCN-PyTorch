@@ -1,4 +1,3 @@
-
 import world
 import utils
 from world import cprint
@@ -24,7 +23,7 @@ print(f"load and save to {weight_file}")
 if world.LOAD:
     try:
         Recmodel.load_state_dict(torch.load(weight_file,map_location=torch.device('cpu')))
-        world.cprint(f"loaded model weights from {weight_file}") 
+        world.cprint(f"loaded model weights from {weight_file}")
     except FileNotFoundError:
         print(f"{weight_file} not exists, start from beginning")
 Neg_k = 1
@@ -37,20 +36,16 @@ if world.tensorboard:
 else:
     w = None
     world.cprint("not enable tensorflowboard")
-    
+
 try:
     for epoch in range(world.TRAIN_epochs):
-        print('======================')
-        print(f'EPOCH[{epoch}/{world.TRAIN_epochs}]')
         start = time.time()
         if epoch %10 == 0:
             cprint("[TEST]")
             Procedure.Test(dataset, Recmodel, epoch, w, world.config['multicore'])
         output_information = Procedure.BPR_train_original(dataset, Recmodel, bpr, epoch, neg_k=Neg_k,w=w)
-        
-        print(f'[saved][{output_information}]')
+        print(f'EPOCH[{epoch+1}/{world.TRAIN_epochs}] {output_information}')
         torch.save(Recmodel.state_dict(), weight_file)
-        print(f"[TOTAL TIME] {time.time() - start}")
 finally:
     if world.tensorboard:
         w.close()

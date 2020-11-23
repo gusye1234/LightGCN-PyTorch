@@ -12,6 +12,7 @@ import torch
 import utils
 import dataloader
 from pprint import pprint
+from utils import timer
 from time import time
 from tqdm import tqdm
 import model
@@ -26,9 +27,9 @@ def BPR_train_original(dataset, recommend_model, loss_class, epoch, neg_k=1, w=N
     Recmodel = recommend_model
     Recmodel.train()
     bpr: utils.BPRLoss = loss_class
-    allusers = list(range(dataset.n_users))
-    S, sam_time = utils.UniformSample_original(allusers, dataset)
-    print(f"BPR[sample time][{sam_time[0]:.1f}={sam_time[1]:.2f}+{sam_time[2]:.2f}]")
+    
+    with timer(name="Sample"):
+        S = utils.UniformSample_original(dataset)
     users = torch.Tensor(S[:, 0]).long()
     posItems = torch.Tensor(S[:, 1]).long()
     negItems = torch.Tensor(S[:, 2]).long()
@@ -51,7 +52,8 @@ def BPR_train_original(dataset, recommend_model, loss_class, epoch, neg_k=1, w=N
         if world.tensorboard:
             w.add_scalar(f'BPRLoss/BPR', cri, epoch * int(len(users) / world.config['bpr_batch_size']) + batch_i)
     aver_loss = aver_loss / total_batch
-    return f"[BPR[aver loss{aver_loss:.3e}]"
+    
+    return f"loss{aver_loss:.3f}-{timer.dict()}"
     
     
 def test_one_batch(X):

@@ -17,28 +17,56 @@ from model import PairWiseModel
 from sklearn.metrics import roc_auc_score
 import random
 import os
-        
+try:
+    from cppimport import imp_from_filepath
+    from os.path import join, dirname
+    path = join(dirname(__file__), "sources/sampling.cpp")
+    sampling = imp_from_filepath(path)
+    sampling.seed(world.seed)
+    sample_ext = True
+except:
+    world.cprint("Cpp extension not loaded")
+    sample_ext = False
+
+
 class BPRLoss:
-    def __init__(self, 
-                 recmodel : PairWiseModel, 
+    def __init__(self,
+                 recmodel : PairWiseModel,
                  config : dict):
         self.model = recmodel
         self.weight_decay = config['decay']
         self.lr = config['lr']
         self.opt = optim.Adam(recmodel.parameters(), lr=self.lr)
-        
+
     def stageOne(self, users, pos, neg):
         loss, reg_loss = self.model.bpr_loss(users, pos, neg)
         reg_loss = reg_loss*self.weight_decay
         loss = loss + reg_loss
-        
+
         self.opt.zero_grad()
         loss.backward()
         self.opt.step()
-        
+
         return loss.cpu().item()
 
-def UniformSample_original(users, dataset):
+
+def UniformSample_original(dataset, neg_ratio = 1):
+    dataset : BasicDataset
+    allPos = dataset
+    start = time()
+    if sample_ext:
+        S = sampling(
+            dataset.n_users,
+            dataset.m_items,
+            dataset.trainDataSize,
+            allPos,
+            neg_ratio
+        )
+    else:
+        S = UniformSample_original_python(users, dataset)
+    return S
+
+def UniformSample_original_python(dataset):
     """
     the original impliment of BPR Sampling in LightGCN
     :return:
@@ -70,13 +98,13 @@ def UniformSample_original(users, dataset):
         end = time()
         sample_time1 += end - start
     total = time() - total_start
-    return np.array(S), [total, sample_time1, sample_time2]
+    return np.array(S)
 
 # ===================end samplers==========================
 # =====================utils====================================
 
 def set_seed(seed):
-    np.random.seed(seed)   
+    np.random.seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
@@ -123,6 +151,69 @@ def shuffle(*arrays, **kwargs):
     else:
         return result
 
+
+class timer:
+    """
+    Time context manager for code block
+        with timer():
+            do something
+        timer.get()
+    """
+    from time import time
+    TAPE = [-1]  # global time record
+    NAMED_TAPE = {}
+
+    @staticmethod
+    def get():
+        if len(timer.TAPE) > 1:
+            return timer.TAPE.pop()
+        else:
+            return -1
+
+    @staticmethod
+    def dict(select_keys=None):
+        hint = "|"
+        if select_keys is None:
+            for key, value in timer.NAMED_TAPE.items():
+                hint = hint + f"{key}:{value:.2f}|"
+        else:
+            for key in select_keys:
+                value = timer.NAMED_TAPE[key]
+                hint = hint + f"{key}:{value:.2f}|"
+        return hint
+
+    @staticmethod
+    def zero(select_keys=None):
+        if select_keys is None:
+            for key, value in timer.NAMED_TAPE.items():
+                timer.NAMED_TAPE[key] = 0
+        else:
+            for key in select_keys:
+                timer.NAMED_TAPE[key] = 0
+
+    def __init__(self, tape=None, **kwargs):
+        if kwargs.get('name'):
+            timer.NAMED_TAPE[kwargs['name']] = timer.NAMED_TAPE[
+                kwargs['name']] if timer.NAMED_TAPE.get(kwargs['name']) else 0.
+            self.named = kwargs['name']
+            if kwargs.get("group"):
+                #TODO: add group function
+                pass
+        else:
+            self.named = False
+            self.tape = tape or timer.TAPE
+
+    def __enter__(self):
+        self.start = timer.time()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.named:
+            timer.NAMED_TAPE[self.named] += timer.time() - self.start
+        else:
+            self.tape.append(timer.time() - self.start)
+
+
 # ====================Metrics==============================
 # =========================================================
 def RecallPrecision_ATk(test_data, r, k):
@@ -156,7 +247,7 @@ def NDCGatK_r(test_data,r,k):
     """
     assert len(r) == len(test_data)
     pred_data = r[:, :k]
-    
+
     test_matrix = np.zeros((len(pred_data), k))
     for i, items in enumerate(test_data):
         length = k if k <= len(items) else len(items)
