@@ -54,7 +54,7 @@ def BPR_train_original(dataset, recommend_model, loss_class, epoch, neg_k=1, w=N
     aver_loss = aver_loss / total_batch
     time_info = timer.dict()
     timer.zero()
-    return f"loss{aver_loss:.3f}-{timer.zero()}"
+    return f"loss{aver_loss:.3f}-{time_info}"
     
     
 def test_one_batch(X):
