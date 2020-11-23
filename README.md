@@ -65,6 +65,11 @@ BPR[sample time][16.9=16.60+0.45]
 3. Use `tensorboard` option, it's good.
 4. Since we fix the seed(`--seed=2020` ) of `numpy` and `torch` in the beginning, if you run the command as we do above, you should have the exact output log despite the running time (check your output of *epoch 5* and *epoch 116*).
 
+#### Update
+
+1. Change the print format of each epoch
+2. Add Cpp Extension in  `code/sources/`  for negative sampling
+
 
 ## Extend:
 * If you want to run lightGCN on your own dataset, you should go to `dataloader.py`, and implement a dataloader inherited from `BasicDataset`.  Then register it in `register.py`.
@@ -93,8 +98,6 @@ BPR[sample time][16.9=16.60+0.45]
 | **layer=3** | 0.1824                | 0.1547 | 0.05589 |
 | **layer=4** | 0.1825                 | 0.1537       | 0.05576 |
 
-*NOTE*: layers=4 we use *seed=1000* to attain a better performance
-
 * yelp2018
 
 |             | Recall | ndcg | precision |
@@ -103,8 +106,6 @@ BPR[sample time][16.9=16.60+0.45]
 | **layer=2** | 0.05988               | 0.04956 | 0.0271 |
 | **layer=3** | 0.06347          | 0.05238 | 0.0285 |
 | **layer=4** | 0.06515                | 0.05325 | 0.02917 |
-
-
 
 For those who want the well-trained models, please e-mail me ( `gusye AT mail.ustc.edu.cn`)
 
