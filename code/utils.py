@@ -55,13 +55,8 @@ def UniformSample_original(dataset, neg_ratio = 1):
     allPos = dataset
     start = time()
     if sample_ext:
-        S = sampling(
-            dataset.n_users,
-            dataset.m_items,
-            dataset.trainDataSize,
-            allPos,
-            neg_ratio
-        )
+        S = sampling.sample_negative(dataset.n_users, dataset.m_items,
+                                     dataset.trainDataSize, allPos, neg_ratio)
     else:
         S = UniformSample_original_python(users, dataset)
     return S
