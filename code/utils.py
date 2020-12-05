@@ -58,7 +58,7 @@ def UniformSample_original(dataset, neg_ratio = 1):
         S = sampling.sample_negative(dataset.n_users, dataset.m_items,
                                      dataset.trainDataSize, allPos, neg_ratio)
     else:
-        S = UniformSample_original_python(users, dataset)
+        S = UniformSample_original_python(dataset)
     return S
 
 def UniformSample_original_python(dataset):
