@@ -68,7 +68,7 @@ BPR[sample time][16.9=16.60+0.45]
 #### Update
 
 1. Change the print format of each epoch
-2. Add Cpp Extension in  `code/sources/`  for negative sampling
+2. Add Cpp Extension in  `code/sources/`  for negative sampling. To use the extension, please install `pybind11` and `cppimport` under your environment
 
 
 ## Extend:
