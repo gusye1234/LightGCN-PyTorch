@@ -1,3 +1,12 @@
+
+#### Update
+
+2020-09:
+* Change the print format of each epoch
+* Add Cpp Extension in  `code/sources/`  for negative sampling. To use the extension, please install `pybind11` and `cppimport` under your environment
+
+---
+
 ## LightGCN-pytorch
 
 This is the Pytorch implementation for our SIGIR 2020 paper:
@@ -65,11 +74,6 @@ BPR[sample time][16.9=16.60+0.45]
 3. Use `tensorboard` option, it's good.
 4. Since we fix the seed(`--seed=2020` ) of `numpy` and `torch` in the beginning, if you run the command as we do above, you should have the exact output log despite the running time (check your output of *epoch 5* and *epoch 116*).
 
-#### Update
-
-1. Change the print format of each epoch
-2. Add Cpp Extension in  `code/sources/`  for negative sampling. To use the extension, please install `pybind11` and `cppimport` under your environment
-
 
 ## Extend:
 * If you want to run lightGCN on your own dataset, you should go to `dataloader.py`, and implement a dataloader inherited from `BasicDataset`.  Then register it in `register.py`.
@@ -80,14 +84,9 @@ BPR[sample time][16.9=16.60+0.45]
 ## Results
 *all metrics is under top-20*
 
-***tensorflow* version results**:
-![](https://github.com/gusye1234/pytorch-light-gcn/blob/master/imgs/tf.jpg)
-
 ***pytorch* version results** (stop at 1000 epochs):
 
 (*for seed=2020*)
-
-![](https://github.com/gusye1234/pytorch-light-gcn/blob/master/imgs/torch.png)
 
 * gowalla:
 
@@ -102,7 +101,7 @@ BPR[sample time][16.9=16.60+0.45]
 
 |             | Recall | ndcg | precision |
 | ----------- | ---------------------------- | ----------------- | ---- |
-| **layer=1** | 0.05604     | 0.4557 | 0.02519 |
+| **layer=1** | 0.05604     | 0.04557 | 0.02519 |
 | **layer=2** | 0.05988               | 0.04956 | 0.0271 |
 | **layer=3** | 0.06347          | 0.05238 | 0.0285 |
 | **layer=4** | 0.06515                | 0.05325 | 0.02917 |
