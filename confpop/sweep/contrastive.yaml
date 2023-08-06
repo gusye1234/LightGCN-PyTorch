@@ -1,0 +1,22 @@
+name: "contrastive"
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - ${args}
+method: grid
+metric:
+  goal: maximize
+  name: recall
+parameters:
+  data:
+    values: ['fair_gowalla', 'fair_yelp2018', 'addressa', 'globe']
+  loss_type:
+    values: ['BPRLoss', BCELoss]
+  alpha:
+    values: [0.1, 0.01, 0.001]
+  temp:
+    values: [0.1, 0.2, 0.4]
+  gpu_id:
+    value: -1
+program: main.py

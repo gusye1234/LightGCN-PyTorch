@@ -1,0 +1,26 @@
+name: "contrastive_netflix"
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - ${args}
+method: grid
+metric:
+  goal: maximize
+  name: Recall
+parameters:
+  bpr_batch:
+    values: [8196]
+  layer:
+    values: [2, 3]
+  data:
+    values: ['netflix']
+  alpha:
+    values: [0.1, 0.01, 0.001]
+  temperature:
+    values: [0.1, 0.2, 0.4]
+  loss_type:
+    values: ['BPRLoss']
+  gpu_id:
+    value: -1
+program: main.py

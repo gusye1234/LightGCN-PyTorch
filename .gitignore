@@ -14,3 +14,11 @@ __pycache__/
 *.npy
 *.so
 .rendered
+
+*.sh
+**/__pycache__/*
+**/checkpoints/*
+**/runs/*
+**/wandb/*
+**/checkpoints.pt
+wandb/*

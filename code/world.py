@@ -30,7 +30,7 @@ if not os.path.exists(FILE_PATH):
 
 
 config = {}
-all_dataset = ['lastfm', 'gowalla', 'yelp2018', 'amazon-book']
+all_dataset = ['lastfm', 'gowalla', 'yelp2018', 'amazon-book', 'ml1m', 'fair_gowalla', 'fair_yelp2018']
 all_models  = ['mf', 'lgn']
 # config['batch_size'] = 4096
 config['bpr_batch_size'] = args.bpr_batch
@@ -46,6 +46,15 @@ config['decay'] = args.decay
 config['pretrain'] = args.pretrain
 config['A_split'] = False
 config['bigdata'] = False
+config['weight_type'] = args.weight_type
+config['norm_type'] = args.norm_type
+config['is_affine'] = args.is_affine
+config['loss_type'] = args.loss_type
+config['exp'] = args.exp
+config['T'] = args.temperature
+
+if args.gpu_id != "-1":
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
 
 GPU = torch.cuda.is_available()
 device = torch.device('cuda' if GPU else "cpu")

@@ -13,10 +13,21 @@ print(">>SEED:", world.seed)
 # ==============================
 import register
 from register import dataset
+import wandb
+
+wandb.init(project="LightGCN_leverage", entity="dain5832")
+wandb.run.name = '{}_{}_{}_{}'.format(world.dataset, world.config['weight_type'], world.config['norm_type'], world.config['exp'])
+wandb.config.update(world.config)
+
 
 Recmodel = register.MODELS[world.model_name](world.config, dataset)
 Recmodel = Recmodel.to(world.device)
-bpr = utils.BPRLoss(Recmodel, world.config)
+loss_name = getattr(utils, world.config['loss_type'])
+loss_class = loss_name(Recmodel, world.config)
+
+Neg_k = 1
+if world.config['loss_type'] == 'BCELoss':
+    Neg_k = 4
 
 weight_file = utils.getFileName()
 print(f"load and save to {weight_file}")
@@ -26,7 +37,6 @@ if world.LOAD:
         world.cprint(f"loaded model weights from {weight_file}")
     except FileNotFoundError:
         print(f"{weight_file} not exists, start from beginning")
-Neg_k = 1
 
 # init tensorboard
 if world.tensorboard:
@@ -42,8 +52,11 @@ try:
         start = time.time()
         if epoch %10 == 0:
             cprint("[TEST]")
-            Procedure.Test(dataset, Recmodel, epoch, w, world.config['multicore'])
-        output_information = Procedure.BPR_train_original(dataset, Recmodel, bpr, epoch, neg_k=Neg_k,w=w)
+            Procedure.Test(dataset, Recmodel, epoch, w, world.config['multicore'], use_orig=False)
+            #cprint("[TEST ORIG]")
+            #Procedure.Test(dataset, Recmodel, epoch, w, world.config['multicore'], use_orig=True)
+
+        output_information = Procedure.train_original(dataset, Recmodel, loss_class, epoch, neg_k=Neg_k,w=w)
         print(f'EPOCH[{epoch+1}/{world.TRAIN_epochs}] {output_information}')
         torch.save(Recmodel.state_dict(), weight_file)
 finally:

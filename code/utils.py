@@ -49,6 +49,46 @@ class BPRLoss:
 
         return loss.cpu().item()
 
+class BCELoss:
+    def __init__(self,
+                 recmodel : PairWiseModel,
+                 config : dict):
+        self.model = recmodel
+        self.weight_decay = config['decay']
+        self.lr = config['lr']
+        self.opt = optim.Adam(recmodel.parameters(), lr=self.lr)
+
+    def stageOne(self, users, pos, neg):
+        loss, reg_loss = self.model.bce_loss(users, pos, neg)
+        reg_loss = reg_loss*self.weight_decay
+        loss = loss + reg_loss
+
+        self.opt.zero_grad()
+        loss.backward()
+        self.opt.step()
+
+        return loss.cpu().item()
+
+class SoftmaxLoss:
+    def __init__(self,
+                 recmodel : PairWiseModel,
+                 config : dict):
+        self.model = recmodel
+        self.weight_decay = config['decay']
+        self.lr = config['lr']
+        self.opt = optim.Adam(recmodel.parameters(), lr=self.lr)
+
+    def stageOne(self, users, pos, neg):
+        loss, reg_loss = self.model.softmax_loss(users, pos, neg)
+        reg_loss = reg_loss*self.weight_decay
+        loss = loss + reg_loss
+
+        self.opt.zero_grad()
+        loss.backward()
+        self.opt.step()
+
+        return loss.cpu().item()
+
 
 def UniformSample_original(dataset, neg_ratio = 1):
     dataset : BasicDataset
@@ -58,10 +98,10 @@ def UniformSample_original(dataset, neg_ratio = 1):
         S = sampling.sample_negative(dataset.n_users, dataset.m_items,
                                      dataset.trainDataSize, allPos, neg_ratio)
     else:
-        S = UniformSample_original_python(dataset)
+        S = UniformSample_original_python(dataset, neg_ratio)
     return S
 
-def UniformSample_original_python(dataset):
+def UniformSample_original_python(dataset, neg_ratio=1):
     """
     the original impliment of BPR Sampling in LightGCN
     :return:
@@ -84,12 +124,12 @@ def UniformSample_original_python(dataset):
         posindex = np.random.randint(0, len(posForUser))
         positem = posForUser[posindex]
         while True:
-            negitem = np.random.randint(0, dataset.m_items)
+            negitem = np.random.randint(0, dataset.m_items, neg_ratio)
             if negitem in posForUser:
                 continue
             else:
                 break
-        S.append([user, positem, negitem])
+        S.append([user, positem] + list(negitem))
         end = time()
         sample_time1 += end - start
     total = time() - total_start
@@ -277,5 +317,68 @@ def getLabel(test_data, pred_data):
         r.append(pred)
     return np.array(r).astype('float')
 
+def C_Ratio(top_K_items_grp):
+    c_ratio = []
+    for i in range(5):
+        k = top_K_items_grp.shape[1]
+        c_ratio.append(torch.mean((top_K_items_grp == i).sum(axis=1) / k))
+    print('c_ratio:', c_ratio)
+    return c_ratio[-1].item()
+
+def ConformityRate(user_conf_norm, top_K_items_pop):
+    top_K_items_pop_avg = top_K_items_pop.mean(axis=1)
+    conf_rate = pearsonr(user_conf_norm, top_K_items_pop_avg)
+    return conf_rate.item()
+
+def sig_mean(rating, user_attrs, item_attrs):
+    user_sig_lst, item_sig_lst = [], []
+    for i in user_attrs.unique():
+        user_sig_lst.append(rating[user_attrs==i].mean())
+
+    for i in item_attrs.unique():
+        item_sig_lst.append(rating.T[item_attrs==i].mean())
+    print('user_sig_lst:', user_sig_lst)
+    print('item_sig_lst:', item_sig_lst)
+    return user_sig_lst, item_sig_lst
+
+def pearsonr(x, y):
+    """
+    https://gist.github.com/ncullen93/58e71c4303b89e420bd8e0b0aa54bf48
+    Mimics `scipy.stats.pearsonr`
+    Arguments
+    ---------
+    x : 1D torch.Tensor
+    y : 1D torch.Tensor
+    Returns
+    -------
+    r_val : float
+        pearsonr correlation coefficient between x and y
+    
+    Scipy docs ref:
+        https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.pearsonr.html
+    
+    Scipy code ref:
+        https://github.com/scipy/scipy/blob/v0.19.0/scipy/stats/stats.py#L2975-L3033
+    Example:
+        >>> x = np.random.randn(100)
+        >>> y = np.random.randn(100)
+        >>> sp_corr = scipy.stats.pearsonr(x, y)[0]
+        >>> th_corr = pearsonr(torch.from_numpy(x), torch.from_numpy(y))
+        >>> np.allclose(sp_corr, th_corr)
+    """
+    mean_x = torch.mean(x)
+    mean_y = torch.mean(y)
+    xm = x.sub(mean_x)
+    ym = y.sub(mean_y)
+    r_num = xm.dot(ym)
+    r_den = torch.norm(xm, 2) * torch.norm(ym, 2)
+    r_val = r_num / r_den
+    return r_val
 # ====================end Metrics=============================
 # =========================================================
+
+def get_group_diff(metric):
+    metric = torch.tensor(metric)
+    total_mean=torch.mean(metric)
+    group_diff = torch.stack([abs(i-total_mean) for i in metric])
+    return torch.mean(torch.sqrt(torch.pow(group_diff, 2))).item()    

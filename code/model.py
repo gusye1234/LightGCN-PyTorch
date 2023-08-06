@@ -12,7 +12,7 @@ import torch
 from dataloader import BasicDataset
 from torch import nn
 import numpy as np
-
+import torch.nn.functional as F
 
 class BasicModel(nn.Module):    
     def __init__(self):
@@ -58,9 +58,10 @@ class PureMF(BasicModel):
         users_emb = self.embedding_user(users)
         items_emb = self.embedding_item.weight
         scores = torch.matmul(users_emb, items_emb.t())
-        return self.f(scores)
+        return self.f(scores), self.f(scores)
     
     def bpr_loss(self, users, pos, neg):
+        neg = neg.squeeze()
         users_emb = self.embedding_user(users.long())
         pos_emb   = self.embedding_item(pos.long())
         neg_emb   = self.embedding_item(neg.long())
@@ -87,6 +88,8 @@ class LightGCN(BasicModel):
         super(LightGCN, self).__init__()
         self.config = config
         self.dataset : dataloader.BasicDataset = dataset
+        self.user_conf_zdist = self.dataset.user_conf_zdist.to(world.device).to(torch.float32)
+        self.item_pop_zdist = self.dataset.item_pop_zdist.to(world.device).to(torch.float32)
         self.__init_weight()
 
     def __init_weight(self):
@@ -115,6 +118,22 @@ class LightGCN(BasicModel):
         self.f = nn.Sigmoid()
         self.Graph = self.dataset.getSparseGraph()
         print(f"lgn is already to go(dropout:{self.config['dropout']})")
+
+        if self.config['weight_type'] == 'scalar':
+            self.weight = nn.Parameter(torch.tensor(0.0, dtype=torch.float32, device='cuda'))
+            self.bias = nn.Parameter(torch.tensor(0.0, dtype=torch.float32, device='cuda'))
+        elif self.config['weight_type'] == 'vector1':
+            self.weight = nn.Parameter(torch.full([self.num_users], 0.0, dtype=torch.float32, device='cuda'))
+            self.bias = nn.Parameter(torch.full([self.num_users], 0.0, dtype=torch.float32, device='cuda'))
+        elif self.config['weight_type'] == 'vector2':
+            self.weight = nn.Parameter(torch.full([self.num_items], 0.0, dtype=torch.float32, device='cuda'))
+            self.bias = nn.Parameter(torch.full([self.num_items], 0.0, dtype=torch.float32, device='cuda'))
+
+        if self.config['is_affine']:
+            self.scale_u = nn.Parameter(torch.tensor(1.0, dtype=torch.float32, device='cuda'))
+            self.shift_u = nn.Parameter(torch.tensor(0.0, dtype=torch.float32, device='cuda'))
+            self.scale_i = nn.Parameter(torch.tensor(1.0, dtype=torch.float32, device='cuda'))
+            self.shift_i = nn.Parameter(torch.tensor(0.0, dtype=torch.float32, device='cuda'))
 
         # print("save_txt")
     def __dropout_x(self, x, keep_prob):
@@ -145,7 +164,7 @@ class LightGCN(BasicModel):
         items_emb = self.embedding_item.weight
         all_emb = torch.cat([users_emb, items_emb])
         #   torch.split(all_emb , [self.num_users, self.num_items])
-        embs = [all_emb]
+        embs = [all_emb] # E_list
         if self.config['dropout']:
             if self.training:
                 print("droping")
@@ -175,8 +194,29 @@ class LightGCN(BasicModel):
         all_users, all_items = self.computer()
         users_emb = all_users[users.long()]
         items_emb = all_items
-        rating = self.f(torch.matmul(users_emb, items_emb.t()))
-        return rating
+        users_emb = F.normalize(users_emb)
+        items_emb = F.normalize(items_emb)
+        rating = torch.matmul(users_emb, items_emb.T)
+        rating_orig = rating
+        #user_conf = self.user_conf_zdist[users]
+        #item_pop = self.item_pop_zdist.squeeze()
+        #rating_orig = self.f(torch.matmul(users_emb, items_emb.t()))
+#
+        #if self.config['is_affine']:
+        #    user_conf = user_conf * self.scale_u + self.shift_u
+        #    item_pop = item_pop * self.scale_i + self.shift_i
+        #if self.config['weight_type']:
+        #    adj = user_conf * item_pop
+        #    if self.config['weight_type'] == 'vector1':
+        #        adj = adj * self.weight[users].unsqueeze(dim=1) + self.bias[users].unsqueeze(dim=1)
+        #    elif self.config['weight_type'] == 'vector2':
+        #        adj = adj * self.weight + self.bias
+        #    else:
+        #        adj = adj * self.weight + self.bias
+        #    rating = self.f(torch.matmul(users_emb, items_emb.t()) + adj)
+        #else:
+        #    rating = rating_orig
+        return rating, rating_orig
     
     def getEmbedding(self, users, pos_items, neg_items):
         all_users, all_items = self.computer()
@@ -189,20 +229,129 @@ class LightGCN(BasicModel):
         return users_emb, pos_emb, neg_emb, users_emb_ego, pos_emb_ego, neg_emb_ego
     
     def bpr_loss(self, users, pos, neg):
+        #import pdb;pdb.set_trace()
+        neg = neg.squeeze()
         (users_emb, pos_emb, neg_emb, 
         userEmb0,  posEmb0, negEmb0) = self.getEmbedding(users.long(), pos.long(), neg.long())
         reg_loss = (1/2)*(userEmb0.norm(2).pow(2) + 
                          posEmb0.norm(2).pow(2)  +
                          negEmb0.norm(2).pow(2))/float(len(users))
-        pos_scores = torch.mul(users_emb, pos_emb)
-        pos_scores = torch.sum(pos_scores, dim=1)
-        neg_scores = torch.mul(users_emb, neg_emb)
-        neg_scores = torch.sum(neg_scores, dim=1)
         
-        loss = torch.mean(torch.nn.functional.softplus(neg_scores - pos_scores))
+        if self.config['weight_type']:
+            user_conf = self.user_conf_zdist[users] # B
+            pos_pop = self.item_pop_zdist[pos] # B
+            neg_pop = self.item_pop_zdist[neg] # B
+            if self.config['is_affine']:
+                user_conf = user_conf * self.scale_u + self.shift_u
+                pos_pop = pos_pop * self.scale_i + self.shift_i
+                neg_pop = neg_pop * self.scale_i + self.shift_i
+            if self.config['weight_type'] == 'vector1':
+                pos_adj = (user_conf*pos_pop) * self.weight[users] + self.bias[users]
+                neg_adj = (user_conf*neg_pop) * self.weight[users] + self.bias[users]
+            elif self.config['weight_type'] == 'vector2':
+                pos_adj = (user_conf*pos_pop) * self.weight[pos] + self.bias[pos]
+                neg_adj = (user_conf*neg_pop) * self.weight[neg] + self.bias[neg]
+            else:
+                pos_adj = (user_conf*pos_pop) * self.weight + self.bias
+                neg_adj = (user_conf*neg_pop) * self.weight + self.bias
+            pos_scores = torch.mul(users_emb, pos_emb) 
+            pos_scores = torch.sum(pos_scores, dim=1) 
+            neg_scores = torch.mul(users_emb, neg_emb) 
+            neg_scores = torch.sum(neg_scores, dim=1)
+
+            # 또는 softmax
+            pos_adj =  F.binary_cross_entropy(self.f(pos_adj), torch.ones(pos_adj.shape).cuda())
+            neg_adj =  F.binary_cross_entropy(self.f(neg_adj), torch.zeros(neg_adj.shape).cuda())
+            loss = torch.mean(torch.nn.functional.softplus(neg_scores - pos_scores)) + pos_adj + neg_adj
+            #loss = torch.mean(torch.nn.functional.softplus(neg_scores - pos_scores)+torch.nn.functional.softplus(neg_adj-pos_adj))
+
+        else:
+            pos_scores = torch.mul(users_emb, pos_emb)
+            pos_scores = torch.sum(pos_scores, dim=1)
+            neg_scores = torch.mul(users_emb, neg_emb)
+            neg_scores = torch.sum(neg_scores, dim=1)
+            
+            loss = torch.mean(torch.nn.functional.softplus(neg_scores - pos_scores))
         
         return loss, reg_loss
-       
+
+    def bce_loss(self, users, pos, neg):
+        #import pdb;pdb.set_trace()
+        #all_users, all_items = self.computer()
+        (users_emb, pos_emb, neg_emb, 
+        userEmb0,  posEmb0, negEmb0) = self.getEmbedding(users.long(), pos.long(), neg.long())
+        reg_loss = (1/2)*(userEmb0.norm(2).pow(2) + 
+                         posEmb0.norm(2).pow(2)  +
+                         negEmb0.norm(2).pow(2))/float(len(users))
+        if self.config['weight_type']:
+            user_conf = self.user_conf_zdist[users].to(torch.float32) # B
+            pos_pop = self.item_pop_zdist[pos].to(torch.float32) # B
+            neg_pop = self.item_pop_zdist[neg].to(torch.float32) # B
+            if self.config['is_affine']:
+                user_conf = user_conf * self.scale_u + self.shift_u
+                pos_pop = pos_pop * self.scale_i + self.shift_i
+                neg_pop = neg_pop * self.scale_i + self.shift_i
+            if self.config['weight_type'] == 'vector1':
+                pos_adj = (user_conf*pos_pop) * self.weight[users] + self.bias[users]
+                neg_adj = (user_conf*neg_pop) * self.weight[users] + self.bias[users]
+            elif self.config['weight_type'] == 'vector2':
+                pos_adj = (user_conf*pos_pop) * self.weight[pos] + self.bias[pos]
+                neg_adj = (user_conf.unsqueeze(1)*neg_pop) * self.weight[neg] + self.bias[neg]
+            else:
+                pos_adj = (user_conf*pos_pop) * self.weight + self.bias
+                neg_adj = (user_conf.unsqueeze(1)*neg_pop) * self.weight + self.bias
+                neg_adj = neg_adj.squeeze().reshape(-1,1)
+
+            pos_scores = torch.mul(users_emb, pos_emb)
+            pos_scores = torch.sum(pos_scores, dim=1) 
+            neg_scores = torch.mul(users_emb.unsqueeze(1), neg_emb)
+            neg_scores = torch.sum(neg_scores, dim=2).reshape(-1,1).squeeze()
+            
+            loss = F.binary_cross_entropy(torch.sigmoid(pos_scores+pos_adj.squeeze()), torch.ones(pos_scores.shape).cuda()) + F.binary_cross_entropy(torch.sigmoid(neg_scores + neg_adj.squeeze()), torch.zeros(neg_scores.shape).cuda())
+            #adj_loss =  F.binary_cross_entropy(self.f(pos_adj), torch.ones(pos_adj.shape).cuda()) + F.binary_cross_entropy(self.f(neg_adj), torch.ones(neg_adj.shape).cuda())
+            #loss = F.binary_cross_entropy(torch.sigmoid(pos_scores), torch.ones(pos_scores.shape).cuda()) + F.binary_cross_entropy(torch.sigmoid(neg_scores), torch.zeros(neg_scores.shape).cuda())
+            #loss =loss + adj_loss
+
+        else:
+            pos_scores = torch.mul(users_emb, pos_emb)
+            pos_scores = torch.sum(pos_scores, dim=1)
+            neg_scores = torch.mul(users_emb.unsqueeze(1), neg_emb)
+            neg_scores = torch.sum(neg_scores, dim=2).reshape(-1,1).squeeze()
+            
+            loss = F.binary_cross_entropy(torch.sigmoid(pos_scores), torch.ones(pos_scores.shape).cuda()) + F.binary_cross_entropy(torch.sigmoid(neg_scores), torch.zeros(neg_scores.shape).cuda())
+        return loss, reg_loss
+
+    def softmax_loss(self, users, pos, neg):
+        #import pdb;pdb.set_trace()
+        (users_emb, pos_emb, neg_emb, 
+        userEmb0,  posEmb0, negEmb0) = self.getEmbedding(users.long(), pos.long(), neg.long())
+        reg_loss = (1/2)*(userEmb0.norm(2).pow(2) + 
+                        posEmb0.norm(2).pow(2)  +
+                        negEmb0.norm(2).pow(2))/float(len(users))
+
+        if self.config['weight_type']:
+            user_conf = self.user_conf_zdist[users] # B
+            pos_pop = self.item_pop_zdist[pos]
+            if self.config['is_affine']:
+                user_conf = user_conf * self.scale_u + self.shift_u
+                pos_pop = pos_pop * self.scale_i + self.shift_i
+            if self.config['weight_type'] == 'vector1':
+                pos_adj = (user_conf*pos_pop) * self.weight[users] + self.bias[users]
+            elif self.config['weight_type'] == 'vector2':
+                pos_adj = (user_conf*pos_pop) * self.weight[pos] + self.bias[pos]
+            else:
+                pos_adj = (user_conf*pos_pop) * self.weight + self.bias
+            pos_scores = F.cosine_similarity(users_emb.unsqueeze(1), pos_emb, dim=-1) # user X item
+            log_softmax_var = F.log_softmax((pos_scores+pos_adj)/self.config["T"], dim=1).diag()
+            loss = - torch.mean(log_softmax_var)
+
+        else:
+            pos_scores = F.cosine_similarity(users_emb.unsqueeze(1), pos_emb, dim=-1) # user X item
+            log_softmax_var = F.log_softmax(pos_scores/self.config["T"], dim=1).diag()
+            loss = - torch.mean(log_softmax_var)
+                
+        return loss, reg_loss
+
     def forward(self, users, items):
         # compute embedding
         all_users, all_items = self.computer()

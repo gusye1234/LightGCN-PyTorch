@@ -1,0 +1,22 @@
+name: "baseline"
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - ${args}
+method: grid
+metric:
+  goal: maximize
+  name: recall
+parameters:
+  data:
+    values: ['fair_gowalla', 'fair_yelp2018']
+  alpha:
+    values: [0.01, 0.05, 0.1, 0.2, 0.5]
+  k:
+    values: [64, 128, 256]
+  decay:
+    values: [1e-6, 1e-4, 1e-2]
+  gpu_id:
+    value: -1
+program: main.py

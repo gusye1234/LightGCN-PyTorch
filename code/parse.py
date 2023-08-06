@@ -10,6 +10,7 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Go lightGCN")
+    parser.add_argument("--gpu_id", type=str, default='7', help="GPU id to use.")
     parser.add_argument('--bpr_batch', type=int,default=2048,
                         help="the batch size for bpr loss training procedure")
     parser.add_argument('--recdim', type=int,default=64,
@@ -43,4 +44,12 @@ def parse_args():
     parser.add_argument('--pretrain', type=int, default=0, help='whether we use pretrained weight or not')
     parser.add_argument('--seed', type=int, default=2020, help='random seed')
     parser.add_argument('--model', type=str, default='lgn', help='rec-model, support [mf, lgn]')
+
+    parser.add_argument('--temperature', type=float,default=0.2,
+                        help="the temperature for softmax")
+    parser.add_argument('--exp', type=str, default='', help='exp name in wandb')
+    parser.add_argument("--is_affine", default=False, action='store_true')
+    parser.add_argument("--norm_type", type=str, default='z_dist', choices=['z_dist', 'z_dist_log', 'minmax1', 'minmax2'])
+    parser.add_argument("--weight_type", type=str, default='', choices=['scalar', 'vector1', 'vector2'])
+    parser.add_argument("--loss_type", type=str, default='BPRLoss', choices=['BPRLoss', 'BCELoss', 'SoftmaxLoss'])
     return parser.parse_args()
